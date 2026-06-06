@@ -41,6 +41,7 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const awaitingRoom = useRef(false);
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Restore saved name
   useEffect(() => {
@@ -63,12 +64,16 @@ export default function LandingPage() {
         })
         .subscribe([`SELECT * FROM player WHERE identity = '${hex}'`]);
 
-      conn.db.player.onInsert((_ctx, player) => {
+      const handlePlayerRoom = (player: { identity: { toHexString(): string }; roomCode: string }) => {
         if (player.identity.toHexString() !== hex) return;
         if (!awaitingRoom.current) return;
         awaitingRoom.current = false;
+        if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
         router.push(`/room/${player.roomCode}`);
-      });
+      };
+
+      conn.db.player.onInsert((_ctx, player) => handlePlayerRoom(player));
+      conn.db.player.onUpdate((_ctx, _old, player) => handlePlayerRoom(player));
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -86,7 +91,13 @@ export default function LandingPage() {
       if (!conn) throw new Error('Not connected');
       awaitingRoom.current = true;
       conn.reducers.createRoom({ playerName: playerName.trim() });
-      // Navigation happens in player.onInsert callback
+      timeoutRef.current = setTimeout(() => {
+        if (awaitingRoom.current) {
+          awaitingRoom.current = false;
+          setLoading(null);
+          setError('Failed to create room — please try again');
+        }
+      }, 10_000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to create room');
       awaitingRoom.current = false;
@@ -107,8 +118,14 @@ export default function LandingPage() {
 
       // Listen for player row appearing (means join succeeded)
       awaitingRoom.current = true;
-
       conn.reducers.joinRoom({ roomCode: code, playerName: playerName.trim() });
+      timeoutRef.current = setTimeout(() => {
+        if (awaitingRoom.current) {
+          awaitingRoom.current = false;
+          setLoading(null);
+          setError('Failed to join room — check the code and try again');
+        }
+      }, 10_000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to join room');
       awaitingRoom.current = false;

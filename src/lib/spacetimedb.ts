@@ -13,16 +13,18 @@ const _pendingCallbacks: ConnectedFn[] = [];
 export function getStdbConnection(): Conn {
   if (_conn) return _conn;
 
+  const uri = process.env.NEXT_PUBLIC_SPACETIMEDB_URL ?? 'wss://maincloud.spacetimedb.com';
+  const tokenKey = `stdb_token_${uri}`;
   const savedToken =
-    typeof window !== 'undefined' ? (localStorage.getItem('stdb_token') ?? undefined) : undefined;
+    typeof window !== 'undefined' ? (localStorage.getItem(tokenKey) ?? undefined) : undefined;
 
   _conn = DbConnection.builder()
-    .withUri(process.env.NEXT_PUBLIC_SPACETIMEDB_URL ?? 'wss://maincloud.spacetimedb.com')
+    .withUri(uri)
     .withDatabaseName(process.env.NEXT_PUBLIC_SPACETIMEDB_MODULE ?? 'prompter-hack')
     .withToken(savedToken)
     .onConnect((_ctx: Conn, identity: Identity, token: string) => {
       _identity = identity;
-      if (typeof window !== 'undefined') localStorage.setItem('stdb_token', token);
+      if (typeof window !== 'undefined') localStorage.setItem(tokenKey, token);
       _pendingCallbacks.splice(0).forEach(fn => fn(_conn!, identity));
     })
     .build();

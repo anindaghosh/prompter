@@ -1,13 +1,10 @@
-import { VertexAI, HarmCategory, HarmBlockThreshold } from '@google-cloud/vertexai';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
-import { ensureVertexCredentials } from '@/lib/vertex-credentials';
 import path from 'path';
 
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || '';
-const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-// Reference image metadata (must match server.js)
 const REFERENCE_IMAGES: Record<string, { filename: string; category: string; difficulty: string; title: string }> = {
     'img-001': { filename: 'starry-night.jpg', category: 'Fine Art', difficulty: 'Hard', title: 'Starry Night Style' },
     'img-002': { filename: 'mountain-lake.jpg', category: 'Photography', difficulty: 'Medium', title: 'Mountain Lake' },
@@ -32,7 +29,6 @@ const REFERENCE_IMAGES: Record<string, { filename: string; category: string; dif
 };
 
 export async function POST(req: NextRequest) {
-    ensureVertexCredentials();
     try {
         const { referenceImageId, generatedImageBase64 } = await req.json();
 
@@ -45,11 +41,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unknown reference image ID' }, { status: 400 });
         }
 
-        if (!PROJECT_ID) {
-            return NextResponse.json({ error: 'GOOGLE_CLOUD_PROJECT not configured' }, { status: 500 });
-        }
-
-        // Load reference image from the public folder as base64
         const refImagePath = path.join(process.cwd(), 'public', 'reference-images', imageInfo.filename);
         let refImageBase64: string;
         let refMimeType = 'image/jpeg';
@@ -61,27 +52,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Reference image not found on server' }, { status: 500 });
         }
 
-        // Strip data URL prefix if present
         const cleanGenerated = generatedImageBase64.includes(',')
             ? generatedImageBase64.split(',')[1]
             : generatedImageBase64;
 
         const genMimeType = generatedImageBase64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
 
-        const vertexAI = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-        const model = vertexAI.getGenerativeModel({
-            model: 'gemini-2.0-flash-001',
-            safetySettings: [
-                { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-                { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-            ],
-            generationConfig: {
-                responseMimeType: 'application/json',
-                temperature: 0.1,
-            },
-        });
-
-        const prompt = `You are an expert visual similarity judge for an AI image prompt game.
+        const scoringPrompt = `You are an expert visual similarity judge for an AI image prompt game.
 
 You are given two images:
 1. REFERENCE IMAGE: The original target image (category: ${imageInfo.category}, titled "${imageInfo.title}")
@@ -91,7 +68,7 @@ Your job is to score how well the generated image matches the reference image.
 
 Evaluate across these dimensions:
 - Composition & layout (30%): framing, perspective, arrangement of elements
-- Color palette & lighting (25%): dominant colors, contrast, mood lighting  
+- Color palette & lighting (25%): dominant colors, contrast, mood lighting
 - Subject & content (30%): main subjects, objects, scene elements present
 - Style & atmosphere (15%): artistic style, mood, texture, overall feel
 
@@ -107,20 +84,27 @@ Return ONLY valid JSON with this exact format:
   "reasoning": "<2-3 sentence explanation of the score, what matched well and what didn't>"
 }`;
 
-        const response = await model.generateContent({
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: refMimeType, data: refImageBase64 } },
-                        { inlineData: { mimeType: genMimeType, data: cleanGenerated } },
-                        { text: prompt },
-                    ],
-                },
-            ],
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{
+                role: 'user',
+                parts: [
+                    { inlineData: { mimeType: refMimeType, data: refImageBase64 } },
+                    { inlineData: { mimeType: genMimeType, data: cleanGenerated } },
+                    { text: scoringPrompt },
+                ],
+            }],
+            config: {
+                responseMimeType: 'application/json',
+                temperature: 0.1,
+                safetySettings: [
+                    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                ],
+            },
         });
 
-        const text = response.response.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) throw new Error('No response from Gemini');
 
         const parsed = JSON.parse(text);
@@ -130,9 +114,8 @@ Return ONLY valid JSON with this exact format:
             reasoning: parsed.reasoning ?? '',
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[score-image] Error:', error);
-        // Return a neutral score on failure rather than breaking the game
         return NextResponse.json({
             similarityScore: 0,
             breakdown: {},

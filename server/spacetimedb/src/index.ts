@@ -357,13 +357,15 @@ function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs
 export const createRoom = spacetimedb.reducer(
   { playerName: t.string() },
   (ctx, { playerName }) => {
-    // Clean up if player has a stale offline row
+    // Evict any existing player row (stale from disconnect or prior session)
     const stale = ctx.db.player.identity.find(ctx.sender);
     if (stale) {
-      if (stale.is_online) throw new Error('Already in a room');
       ctx.db.player.identity.delete(ctx.sender);
       const stalePp = ctx.db.playerPowerup.identity.find(ctx.sender);
       if (stalePp) ctx.db.playerPowerup.identity.delete(ctx.sender);
+      // Clean up old room if now empty
+      const remaining = [...ctx.db.player.by_room.filter(stale.room_code)];
+      if (remaining.length === 0) ctx.db.room.code.delete(stale.room_code);
     }
 
     // Generate 6-char room code
