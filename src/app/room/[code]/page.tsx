@@ -126,18 +126,33 @@ export default function GameRoomPage() {
       roundScore: r.roundScore,
       reasoning: r.reasoning,
       rank: r.placement,
+      scoreBreakdown: r.scoreBreakdown ? (() => { try { return JSON.parse(r.scoreBreakdown); } catch { return undefined; } })() : undefined,
+      hadDoublePoints: r.hadDoublePoints,
+      simScore: r.simScore,
+      effScore: r.effScore,
+      speedScore: r.speedScore,
     }));
+
+    const allRoundResults = [...conn.db.roundResult.by_room.filter(code)];
 
     const leaderboard: LeaderboardEntry[] = allPlayers
       .sort((a, b) => b.totalScore - a.totalScore)
-      .map((pl, i) => ({
-        playerId: pl.identity.toHexString(),
-        playerName: pl.name,
-        playerAvatar: AVATARS[pl.avatarIndex % AVATARS.length],
-        avatar: AVATARS[pl.avatarIndex % AVATARS.length],
-        totalScore: pl.totalScore,
-        rank: i + 1,
-      }));
+      .map((pl, i) => {
+        const playerHex = pl.identity.toHexString();
+        const playerRoundResults = allRoundResults
+          .filter(r => r.identity.toHexString() === playerHex)
+          .sort((a, b) => a.round - b.round);
+        return {
+          playerId: playerHex,
+          playerName: pl.name,
+          playerAvatar: AVATARS[pl.avatarIndex % AVATARS.length],
+          avatar: AVATARS[pl.avatarIndex % AVATARS.length],
+          totalScore: pl.totalScore,
+          rank: i + 1,
+          roundScores: playerRoundResults.map(r => r.roundScore),
+          roundDoublePoints: playerRoundResults.map(r => r.hadDoublePoints),
+        };
+      });
 
     // Reference image
     const imgMeta = REFERENCE_IMAGES.find(i => i.id === room.currentImageId);
@@ -345,12 +360,14 @@ export default function GameRoomPage() {
         const data = await res.json();
         const similarityScore = Math.round(Math.min(100, Math.max(0, data.similarityScore ?? 0)));
         const reasoning = data.reasoning ?? '';
+        const scoreBreakdown = JSON.stringify(data.breakdown ?? {});
         conn.reducers.submitScore({
           roomCode: code,
           round: currentRound,
           similarityScore,
           imageData,
           reasoning,
+          scoreBreakdown,
         });
       } catch {
         // Submit 0 score so the round can progress
@@ -360,6 +377,7 @@ export default function GameRoomPage() {
           similarityScore: 0,
           imageData: imageData,
           reasoning: 'Scoring failed',
+          scoreBreakdown: '{}',
         });
       }
     })();

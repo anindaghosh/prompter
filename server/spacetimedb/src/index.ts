@@ -136,6 +136,11 @@ const roundResult = table(
     round_score:      t.u32(),
     placement:        t.u32(),
     reasoning:        t.string(),
+    score_breakdown:   t.string(), // JSON { composition, colorPalette, subjectContent, styleAtmosphere }
+    had_double_points: t.bool(),
+    sim_score:         t.u32(),
+    eff_score:         t.u32(),
+    speed_score:       t.u32(),
   }
 );
 
@@ -353,14 +358,19 @@ function startRound(ctx: any, roomCode: string, rm: any) {
   });
 }
 
-function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs: number): number {
+function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs: number): { total: number; simScore: number; effScore: number; speedScore: number } {
   const simScore = Math.min(100, Math.max(0, similarityScore)) * 0.60;
   const savedTokens = Math.max(0, TOKEN_BUDGET - tokensUsed);
   const effScore = (savedTokens / TOKEN_BUDGET) * 100 * 0.25;
   const roundDurationMs = Number(ROUND_DURATION_US / 1000n);
   const normalizedTime = Math.max(0, Math.min(1, submissionTimeMs / roundDurationMs));
   const speedScore = (1 - normalizedTime) * 100 * 0.15;
-  return Math.round(simScore + effScore + speedScore);
+  return {
+    total: Math.round(simScore + effScore + speedScore),
+    simScore: Math.round(simScore),
+    effScore: Math.round(effScore),
+    speedScore: Math.round(speedScore),
+  };
 }
 
 // ─── Reducers ─────────────────────────────────────────────────────────────────
@@ -548,8 +558,8 @@ export const submitPrompt = spacetimedb.reducer(
 );
 
 export const submitScore = spacetimedb.reducer(
-  { roomCode: t.string(), round: t.u32(), similarityScore: t.u32(), imageData: t.string(), reasoning: t.string() },
-  (ctx, { roomCode, round, similarityScore, imageData, reasoning }) => {
+  { roomCode: t.string(), round: t.u32(), similarityScore: t.u32(), imageData: t.string(), reasoning: t.string(), scoreBreakdown: t.string() },
+  (ctx, { roomCode, round, similarityScore, imageData, reasoning, scoreBreakdown }) => {
     const rm = ctx.db.room.code.find(roomCode);
     if (!rm || rm.phase !== 'scoring' || rm.current_round !== round) return;
 
@@ -568,7 +578,8 @@ export const submitScore = spacetimedb.reducer(
     const pp = ctx.db.playerPowerup.identity.find(ctx.sender);
     const hasDoublePoints = pp ? pp.has_double_points : false;
 
-    let roundScore = calcScore(similarityScore, sub.tokens_used, Number(sub.submission_time_ms));
+    const scored = calcScore(similarityScore, sub.tokens_used, Number(sub.submission_time_ms));
+    let roundScore = scored.total;
     if (hasDoublePoints) roundScore = roundScore * 2;
 
     // Update player cumulative score
@@ -581,19 +592,24 @@ export const submitScore = spacetimedb.reducer(
     });
 
     ctx.db.roundResult.insert({
-      id:               0n,
-      identity:         ctx.sender,
-      room_code:        roomCode,
+      id:                0n,
+      identity:          ctx.sender,
+      room_code:         roomCode,
       round,
-      player_name:      pl.name,
-      avatar_index:     pl.avatar_index,
-      prompt:           sub.prompt,
-      image_data:       imageData,
-      tokens_used:      sub.tokens_used,
-      similarity_score: similarityScore,
-      round_score:      roundScore,
-      placement:        0, // computed below after all results
+      player_name:       pl.name,
+      avatar_index:      pl.avatar_index,
+      prompt:            sub.prompt,
+      image_data:        imageData,
+      tokens_used:       sub.tokens_used,
+      similarity_score:  similarityScore,
+      round_score:       roundScore,
+      placement:         0, // computed below after all results
       reasoning,
+      score_breakdown:   scoreBreakdown || '{}',
+      had_double_points: hasDoublePoints,
+      sim_score:         scored.simScore,
+      eff_score:         scored.effScore,
+      speed_score:       scored.speedScore,
     });
 
     // Check if all submitting players have results
@@ -839,6 +855,8 @@ export const handleRoundEnd = spacetimedb.reducer(
           player_name: pl.name, avatar_index: pl.avatar_index,
           prompt: '', image_data: '', tokens_used: 0,
           similarity_score: 0, round_score: 0, placement: 0, reasoning: 'Did not submit',
+          score_breakdown: '{}', had_double_points: false,
+          sim_score: 0, eff_score: 0, speed_score: 0,
         });
       }
     }

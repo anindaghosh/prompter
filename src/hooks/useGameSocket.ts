@@ -40,6 +40,10 @@ export interface PlayerResult {
   totalScore?: number;
   reasoning: string;
   rank?: number;
+  hadDoublePoints?: boolean;
+  simScore?: number;
+  effScore?: number;
+  speedScore?: number;
 }
 
 export interface LeaderboardEntry {
@@ -49,6 +53,8 @@ export interface LeaderboardEntry {
   avatar?: string;
   totalScore: number;
   rank: number;
+  roundScores?: number[];
+  roundDoublePoints?: boolean[];
 }
 
 export type GamePhase =
