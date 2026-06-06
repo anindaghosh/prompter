@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from 'react-oidc-context';
 import { onStdbConnected } from '@/lib/spacetimedb';
@@ -81,6 +81,7 @@ export default function GameRoomPage() {
   const hasSubmittedScoreRef = useRef(false);
 
   const [gs, setGs] = useState<GameState>(INITIAL);
+  const [tips, setTips] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const generatedImageRef = useRef<string | null>(null); // stable ref for scoring
@@ -248,6 +249,11 @@ export default function GameRoomPage() {
           }
 
           rebuildFromDB();
+          setTips(
+            [...conn.db.gameTip.iter()]
+              .sort((a, b) => a.id - b.id)
+              .map(r => r.text)
+          );
         })
         .subscribe([
           `SELECT * FROM room WHERE code = '${code}'`,
@@ -255,6 +261,7 @@ export default function GameRoomPage() {
           `SELECT * FROM submission WHERE room_code = '${code}'`,
           `SELECT * FROM round_result WHERE room_code = '${code}'`,
           `SELECT * FROM player_powerup WHERE room_code = '${code}'`,
+          `SELECT * FROM game_tip`,
         ]);
 
       // Table change listeners → rebuild full state
@@ -513,9 +520,9 @@ export default function GameRoomPage() {
         {gs.phase === 'playing' && (
           <PlayingView gs={gs} generating={generating} generatedImage={generatedImage} genError={genError}
             onSubmit={handlePromptSubmit} onUsePowerup={usePowerup}
-            powerupTarget={powerupTarget} onSetPowerupTarget={setPowerupTarget} />
+            powerupTarget={powerupTarget} onSetPowerupTarget={setPowerupTarget} tips={tips} />
         )}
-        {gs.phase === 'scoring' && <ScoringView />}
+        {gs.phase === 'scoring' && <ScoringView tips={tips} />}
         {gs.phase === 'reveal' && (
           <div>
             <ResultsReveal results={gs.results} referenceImage={gs.referenceImage} myPlayerId={gs.myPlayerId} />
@@ -593,11 +600,12 @@ function CountdownView({ value }: { value: number }) {
   );
 }
 
-function PlayingView({ gs, generating, generatedImage, genError, onSubmit, onUsePowerup, powerupTarget, onSetPowerupTarget }: {
+function PlayingView({ gs, generating, generatedImage, genError, onSubmit, onUsePowerup, powerupTarget, onSetPowerupTarget, tips }: {
   gs: GameState; generating: boolean; generatedImage: string | null; genError: string | null;
   onSubmit: (prompt: string, tokensUsed: number) => void;
   onUsePowerup: (powerupId: PowerupId, targetPlayerId?: string) => void;
   powerupTarget: string | null; onSetPowerupTarget: (id: string | null) => void;
+  tips: string[];
 }) {
   const totalSeconds = Math.ceil(gs.roundDurationMs / 1000);
   const effectiveBudget = Math.max(0, gs.tokenBudget - gs.tokenDrainAmount);
@@ -670,7 +678,7 @@ function PlayingView({ gs, generating, generatedImage, genError, onSubmit, onUse
           onCancelTarget={() => onSetPowerupTarget(null)} />
       )}
       {gs.submittedThisRound ? (
-        <SubmittedView generatedImage={generatedImage} waitingFor={gs.waitingForPlayers} playerCount={gs.players.length} />
+        <SubmittedView generatedImage={generatedImage} waitingFor={gs.waitingForPlayers} playerCount={gs.players.length} tips={tips} />
       ) : (
         <>
           <div className="card" style={{ padding: 16 }}>
@@ -742,7 +750,12 @@ function PowerupTray({ powerup, powerupUsed, def, needsTarget, isSelectingTarget
   );
 }
 
-function SubmittedView({ generatedImage, waitingFor, playerCount }: { generatedImage: string | null; waitingFor: number; playerCount: number }) {
+function SubmittedView({ generatedImage, waitingFor, playerCount, tips }: { generatedImage: string | null; waitingFor: number; playerCount: number; tips: string[] }) {
+  const tip = useMemo(
+    () => (tips.length ? tips[Math.floor(Math.random() * tips.length)] : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tips.length]
+  );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ textAlign: 'center', padding: '20px 16px', background: 'var(--teal)', border: 'var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', color: 'var(--white)' }}>
@@ -763,11 +776,24 @@ function SubmittedView({ generatedImage, waitingFor, playerCount }: { generatedI
         <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(0,0,0,0.15)', borderTopColor: 'var(--teal)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
         <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500, opacity: 0.7 }}>AI is scoring submissions...</span>
       </div>
+      {!generatedImage && tip && (
+        <div style={{ padding: '12px 16px', background: 'var(--white)', border: 'var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.5 }}>
+          <span style={{ fontWeight: 700, marginRight: 6 }}>💡 Tip:</span>{tip}
+        </div>
+      )}
     </div>
   );
 }
 
-function ScoringView() {
+function ScoringView({ tips }: { tips: string[] }) {
+  const [idx, setIdx] = useState(() => tips.length ? Math.floor(Math.random() * tips.length) : 0);
+  useEffect(() => {
+    if (tips.length <= 1) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % tips.length), 4000);
+    return () => clearInterval(t);
+  }, [tips.length]);
+
+  const tip = tips[idx];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20, textAlign: 'center' }}>
       <div style={{ fontSize: 52, animation: 'pulse-ring 1.5s ease-in-out infinite' }}>🤖</div>
@@ -778,6 +804,11 @@ function ScoringView() {
           <div key={i} style={{ width: 10, height: 10, background: 'var(--teal)', borderRadius: '50%', animation: `pulse-ring 1.2s ease-in-out ${i * 0.2}s infinite` }} />
         ))}
       </div>
+      {tip && (
+        <div style={{ maxWidth: 320, padding: '12px 16px', background: 'var(--white)', border: 'var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.5 }}>
+          <span style={{ fontWeight: 700, marginRight: 6 }}>💡 Tip:</span>{tip}
+        </div>
+      )}
     </div>
   );
 }
