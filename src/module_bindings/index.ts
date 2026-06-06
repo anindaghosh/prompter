@@ -39,6 +39,7 @@ import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import NextRoundReducer from "./next_round_reducer";
 import PlayAgainReducer from "./play_again_reducer";
+import SeedTipsReducer from "./seed_tips_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitPromptReducer from "./submit_prompt_reducer";
 import SubmitScoreReducer from "./submit_score_reducer";
@@ -196,6 +197,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("next_round", NextRoundReducer),
   __reducerSchema("play_again", PlayAgainReducer),
+  __reducerSchema("seed_tips", SeedTipsReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_prompt", SubmitPromptReducer),
   __reducerSchema("submit_score", SubmitScoreReducer),
