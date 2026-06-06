@@ -21,4 +21,5 @@ export default __t.row({
   tokenBudget: __t.u32().name("token_budget"),
   usedImageIds: __t.string().name("used_image_ids"),
   countdownValue: __t.u32().name("countdown_value"),
+  statsRecorded: __t.bool().name("stats_recorded"),
 });

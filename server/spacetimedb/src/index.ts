@@ -70,6 +70,7 @@ const room = table(
     token_budget:     t.u32(),
     used_image_ids:   t.string(), // JSON string[]
     countdown_value:  t.u32(),
+    stats_recorded:   t.bool(),
   }
 );
 
@@ -202,6 +203,42 @@ const gameTip = table(
   }
 );
 
+// Per-identity cumulative stats: upserted after each game
+const userStats = table(
+  { name: 'user_stats', public: true },
+  {
+    identity:         t.identity().primaryKey(),
+    games_played:     t.u32(),
+    games_won:        t.u32(),
+    total_score:      t.u64(),
+    best_score:       t.u32(),
+    total_similarity: t.u64(),
+    total_tokens:     t.u64(),
+    total_rounds:     t.u32(),
+    updated_at:       t.timestamp(),
+  }
+);
+
+// One row per player per completed game
+const gameHistory = table(
+  {
+    name: 'game_history',
+    public: true,
+    indexes: [{ accessor: 'by_identity', algorithm: 'btree', columns: ['identity'] }],
+  },
+  {
+    id:             t.u64().primaryKey().autoInc(),
+    identity:       t.identity(),
+    room_code:      t.string(),
+    played_at:      t.timestamp(),
+    final_rank:     t.u32(),
+    player_count:   t.u32(),
+    total_score:    t.u32(),
+    avg_similarity: t.u32(),
+    rounds_played:  t.u32(),
+  }
+);
+
 // Event table: targeted powerup notifications (not stored in client cache)
 const powerupEvent = table(
   { name: 'powerup_event', event: true, public: true },
@@ -256,6 +293,7 @@ const roundEndTimer = table(
 const spacetimedb = schema({
   room, player, userProfile, submission, roundResult, playerPowerup, powerupEvent,
   countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard, gameTip,
+  userStats, gameHistory,
 });
 export default spacetimedb;
 
@@ -523,6 +561,7 @@ export const createRoom = spacetimedb.reducer(
       token_budget: TOKEN_BUDGET,
       used_image_ids: '[]',
       countdown_value: 3,
+      stats_recorded: false,
     });
 
     ctx.db.player.insert({
@@ -849,7 +888,9 @@ export const nextRound = spacetimedb.reducer(
     if (!rm.host_identity.equals(ctx.sender)) return;
 
     if (rm.current_round >= rm.total_rounds) {
-      ctx.db.room.code.update({ ...rm, phase: 'leaderboard' });
+      if (rm.stats_recorded) return;
+
+      ctx.db.room.code.update({ ...rm, phase: 'leaderboard', stats_recorded: true });
 
       // Upsert global leaderboard: track wins and games played
       const nowUs: bigint = ctx.timestamp.microsSinceUnixEpoch;
@@ -877,6 +918,63 @@ export const nextRound = spacetimedb.reducer(
           });
         }
       }
+
+      // Finalize per-identity stats
+      const playerCount = allPlayers.length;
+      const sortedByScore = [...allPlayers].sort((a, b) => b.total_score - a.total_score);
+
+      for (let rankIdx = 0; rankIdx < sortedByScore.length; rankIdx++) {
+        const pl = sortedByScore[rankIdx];
+        const finalRank = rankIdx + 1;
+        const isWinner = finalRank === 1;
+
+        const playerResults = [...ctx.db.roundResult.by_room.filter(roomCode)]
+          .filter(r => r.identity.toHexString() === pl.identity.toHexString());
+
+        const roundsPlayed = playerResults.length;
+        const totalSimilarity = playerResults.reduce((s, r) => s + r.similarity_score, 0);
+        const avgSimilarity = roundsPlayed > 0 ? Math.round(totalSimilarity / roundsPlayed) : 0;
+        const totalTokens = playerResults.reduce((s, r) => s + r.tokens_used, 0);
+
+        const existingStats = ctx.db.userStats.identity.find(pl.identity);
+        if (!existingStats) {
+          ctx.db.userStats.insert({
+            identity:         pl.identity,
+            games_played:     1,
+            games_won:        isWinner ? 1 : 0,
+            total_score:      BigInt(pl.total_score),
+            best_score:       pl.total_score,
+            total_similarity: BigInt(avgSimilarity),
+            total_tokens:     BigInt(totalTokens),
+            total_rounds:     roundsPlayed,
+            updated_at:       ctx.timestamp,
+          });
+        } else {
+          ctx.db.userStats.identity.update({
+            ...existingStats,
+            games_played:     existingStats.games_played + 1,
+            games_won:        existingStats.games_won + (isWinner ? 1 : 0),
+            total_score:      existingStats.total_score + BigInt(pl.total_score),
+            best_score:       Math.max(existingStats.best_score, pl.total_score),
+            total_similarity: existingStats.total_similarity + BigInt(avgSimilarity),
+            total_tokens:     existingStats.total_tokens + BigInt(totalTokens),
+            total_rounds:     existingStats.total_rounds + roundsPlayed,
+            updated_at:       ctx.timestamp,
+          });
+        }
+
+        ctx.db.gameHistory.insert({
+          id:             0n,
+          identity:       pl.identity,
+          room_code:      roomCode,
+          played_at:      ctx.timestamp,
+          final_rank:     finalRank,
+          player_count:   playerCount,
+          total_score:    pl.total_score,
+          avg_similarity: avgSimilarity,
+          rounds_played:  roundsPlayed,
+        });
+      }
     } else {
       startRound(ctx, roomCode, rm);
     }
@@ -899,6 +997,7 @@ export const playAgain = spacetimedb.reducer(
       round_start_us: 0n,
       used_image_ids: '[]',
       countdown_value: 3,
+      stats_recorded: false,
     });
 
     // Reset all players and their powerups

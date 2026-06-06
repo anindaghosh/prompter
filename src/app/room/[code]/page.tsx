@@ -541,15 +541,18 @@ export default function GameRoomPage() {
           </div>
         )}
         {gs.phase === 'leaderboard' && (
-          <>
+          <div>
             <Leaderboard entries={gs.leaderboard} myPlayerId={gs.myPlayerId}
               currentRound={gs.currentRound} totalRounds={gs.totalRounds}
               isHost={isHost} onNextRound={nextRound} onPlayAgain={playAgain}
               isGameOver={gs.currentRound >= gs.totalRounds} />
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 16 }}>
               <button className="btn btn-ghost" onClick={() => router.push('/profile')}>👤 View Profile</button>
+              {gs.currentRound >= gs.totalRounds && (
+                <button className="btn btn-ghost" onClick={() => router.push('/stats')}>📊 My Stats</button>
+              )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
