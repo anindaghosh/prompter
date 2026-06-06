@@ -43,10 +43,14 @@ export default function LandingPage() {
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Restore saved name
+  // Restore saved name + surface redirect errors
   useEffect(() => {
     const saved = localStorage.getItem('promptinary_name');
     if (saved) setPlayerName(saved);
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (err === 'room-not-found') setError('Room not found — it may have expired or be on a different server.');
+    if (err === 'game-in-progress') setError('That game is already in progress.');
   }, []);
 
   // Connect to SpacetimeDB and subscribe to my player row

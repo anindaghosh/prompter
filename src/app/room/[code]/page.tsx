@@ -202,8 +202,26 @@ export default function GameRoomPage() {
       conn.subscriptionBuilder()
         .onApplied(() => {
           update({ isConnected: true });
-          // Idempotent join (reconnect also handled)
-          conn.reducers.joinRoom({ roomCode: code, playerName });
+
+          const room = conn.db.room.code.find(code);
+          if (!room) {
+            router.replace('/?error=room-not-found');
+            return;
+          }
+
+          const myHex = myHexRef.current;
+          const alreadyInRoom = myHex
+            ? [...conn.db.player.by_room.filter(code)].some(p => p.identity.toHexString() === myHex)
+            : false;
+
+          if (!alreadyInRoom) {
+            if (room.phase !== 'lobby') {
+              router.replace('/?error=game-in-progress');
+              return;
+            }
+            conn.reducers.joinRoom({ roomCode: code, playerName });
+          }
+
           rebuildFromDB();
         })
         .subscribe([
