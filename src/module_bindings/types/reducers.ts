@@ -6,6 +6,7 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
+import CreateProfileReducer from "../create_profile_reducer";
 import CreateRoomReducer from "../create_room_reducer";
 import JoinRoomReducer from "../join_room_reducer";
 import NextRoundReducer from "../next_round_reducer";
@@ -14,8 +15,10 @@ import StartGameReducer from "../start_game_reducer";
 import SubmitPromptReducer from "../submit_prompt_reducer";
 import SubmitScoreReducer from "../submit_score_reducer";
 import ToggleReadyReducer from "../toggle_ready_reducer";
+import UpdateProfileReducer from "../update_profile_reducer";
 import UsePowerupReducer from "../use_powerup_reducer";
 
+export type CreateProfileParams = __Infer<typeof CreateProfileReducer>;
 export type CreateRoomParams = __Infer<typeof CreateRoomReducer>;
 export type JoinRoomParams = __Infer<typeof JoinRoomReducer>;
 export type NextRoundParams = __Infer<typeof NextRoundReducer>;
@@ -24,5 +27,6 @@ export type StartGameParams = __Infer<typeof StartGameReducer>;
 export type SubmitPromptParams = __Infer<typeof SubmitPromptReducer>;
 export type SubmitScoreParams = __Infer<typeof SubmitScoreReducer>;
 export type ToggleReadyParams = __Infer<typeof ToggleReadyReducer>;
+export type UpdateProfileParams = __Infer<typeof UpdateProfileReducer>;
 export type UsePowerupParams = __Infer<typeof UsePowerupReducer>;
 

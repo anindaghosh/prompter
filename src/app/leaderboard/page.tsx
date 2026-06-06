@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getStdbConnection, onStdbConnected } from '@/lib/spacetimedb';
+import { onStdbConnected } from '@/lib/spacetimedb';
 import type { DbConnection } from '@/module_bindings';
 
 type GlobalLeaderboard = InstanceType<typeof DbConnection>['db']['globalLeaderboard'] extends { iter(): Iterable<infer R> } ? R : never;
@@ -20,8 +20,6 @@ export default function LeaderboardPage() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const conn = getStdbConnection();
-
     onStdbConnected((conn) => {
       const rebuild = () => {
         const rows = [...conn.db.globalLeaderboard.iter()];

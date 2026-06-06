@@ -34,6 +34,7 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
+import CreateProfileReducer from "./create_profile_reducer";
 import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import NextRoundReducer from "./next_round_reducer";
@@ -42,6 +43,7 @@ import StartGameReducer from "./start_game_reducer";
 import SubmitPromptReducer from "./submit_prompt_reducer";
 import SubmitScoreReducer from "./submit_score_reducer";
 import ToggleReadyReducer from "./toggle_ready_reducer";
+import UpdateProfileReducer from "./update_profile_reducer";
 import UsePowerupReducer from "./use_powerup_reducer";
 
 // Import all procedure arg schemas
@@ -54,6 +56,7 @@ import PowerupEventRow from "./powerup_event_table";
 import RoomRow from "./room_table";
 import RoundResultRow from "./round_result_table";
 import SubmissionRow from "./submission_table";
+import UserProfileRow from "./user_profile_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -157,10 +160,26 @@ const tablesSchema = __schema({
       { name: 'submission_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, SubmissionRow),
+  userProfile: __table({
+    name: 'user_profile',
+    indexes: [
+      { accessor: 'display_name_lower', name: 'user_profile_display_name_lower_idx_btree', algorithm: 'btree', columns: [
+        'displayNameLower',
+      ] },
+      { accessor: 'identity', name: 'user_profile_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'user_profile_display_name_lower_key', constraint: 'unique', columns: ['displayNameLower'] },
+      { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, UserProfileRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
+  __reducerSchema("create_profile", CreateProfileReducer),
   __reducerSchema("create_room", CreateRoomReducer),
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("next_round", NextRoundReducer),
@@ -169,6 +188,7 @@ const reducersSchema = __reducers(
   __reducerSchema("submit_prompt", SubmitPromptReducer),
   __reducerSchema("submit_score", SubmitScoreReducer),
   __reducerSchema("toggle_ready", ToggleReadyReducer),
+  __reducerSchema("update_profile", UpdateProfileReducer),
   __reducerSchema("use_powerup", UsePowerupReducer),
 );
 

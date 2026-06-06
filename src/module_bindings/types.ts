@@ -130,3 +130,13 @@ export const Submission = __t.object("Submission", {
 });
 export type Submission = __Infer<typeof Submission>;
 
+export const UserProfile = __t.object("UserProfile", {
+  identity: __t.identity(),
+  displayName: __t.string(),
+  displayNameLower: __t.string(),
+  avatarId: __t.u32(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type UserProfile = __Infer<typeof UserProfile>;
+

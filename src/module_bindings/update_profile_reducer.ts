@@ -11,5 +11,6 @@ import {
 } from "spacetimedb";
 
 export default {
-  totalRounds: __t.u32(),
+  displayName: __t.string(),
+  avatarId: __t.u32(),
 };

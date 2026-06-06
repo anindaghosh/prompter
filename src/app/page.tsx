@@ -3,10 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { getStdbConnection, onStdbConnected } from '@/lib/spacetimedb';
+import { useAuth } from 'react-oidc-context';
+import { onStdbConnected } from '@/lib/spacetimedb';
+import { useProfile } from '@/hooks/useProfile';
+import { ProfileModal } from '@/components/ProfileModal';
+import { AVATARS } from '@/hooks/useGameSocket';
 import type { DbConnection } from '@/module_bindings';
 
-const AVATARS = ['🦸', '🧙', '🤖', '👾', '🦊', '🐉', '🦅', '🐺', '🦁', '🐯'];
 const LOGO_URL = process.env.NEXT_PUBLIC_LOGO_URL || '/logo.svg';
 
 function LogoDisplay() {
@@ -34,7 +37,10 @@ function LogoDisplay() {
 
 export default function LandingPage() {
   const router = useRouter();
-  const [playerName, setPlayerName] = useState('');
+  const auth = useAuth();
+  const { profile, loading: profileLoading, createProfile, updateProfile } = useProfile();
+
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [tab, setTab] = useState<'create' | 'join'>('create');
   const [roundCount, setRoundCount] = useState<1 | 3 | 5>(3);
@@ -44,29 +50,22 @@ export default function LandingPage() {
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Restore saved name + surface redirect errors
+  // Surface redirect errors from other pages
   useEffect(() => {
-    const saved = localStorage.getItem('promptinary_name');
-    if (saved) setPlayerName(saved);
     const params = new URLSearchParams(window.location.search);
     const err = params.get('error');
     if (err === 'room-not-found') setError('Room not found — it may have expired or be on a different server.');
     if (err === 'game-in-progress') setError('That game is already in progress.');
   }, []);
 
-  // Connect to SpacetimeDB and subscribe to my player row
+  // Subscribe to my player row so we can detect room creation/join and redirect
   useEffect(() => {
-    const conn = getStdbConnection();
-    connRef.current = conn;
-
     onStdbConnected((conn, identity) => {
+      connRef.current = conn;
       const hex = identity.toHexString();
 
-      // Subscribe to my player row so we can detect room creation/join
       conn.subscriptionBuilder()
-        .onApplied(() => {
-          // If already in a room from previous session, don't auto-redirect
-        })
+        .onApplied(() => {})
         .subscribe([`SELECT * FROM player WHERE identity = '${hex}'`]);
 
       const handlePlayerRoom = (player: { identity: { toHexString(): string }; roomCode: string }) => {
@@ -82,27 +81,24 @@ export default function LandingPage() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveName = (name: string) => {
-    setPlayerName(name);
-    localStorage.setItem('promptinary_name', name);
+  const failRoom = (msg: string) => {
+    if (!awaitingRoom.current) return;
+    awaitingRoom.current = false;
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    setLoading(null);
+    setError(msg);
   };
 
   const handleCreateRoom = async () => {
-    if (!playerName.trim()) { setError('Please enter your name first'); return; }
     setError(null);
     setLoading('create');
     try {
       const conn = connRef.current;
       if (!conn) throw new Error('Not connected');
       awaitingRoom.current = true;
-      conn.reducers.createRoom({ playerName: playerName.trim(), totalRounds: roundCount });
-      timeoutRef.current = setTimeout(() => {
-        if (awaitingRoom.current) {
-          awaitingRoom.current = false;
-          setLoading(null);
-          setError('Failed to create room — please try again');
-        }
-      }, 10_000);
+      conn.reducers.createRoom({ totalRounds: roundCount })
+        .catch((e: unknown) => failRoom(e instanceof Error ? e.message : 'Failed to create room'));
+      timeoutRef.current = setTimeout(() => failRoom('Failed to create room — please try again'), 10_000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to create room');
       awaitingRoom.current = false;
@@ -111,26 +107,17 @@ export default function LandingPage() {
   };
 
   const handleJoinRoom = async () => {
-    if (!playerName.trim()) { setError('Please enter your name first'); return; }
     if (!joinCode.trim()) { setError('Please enter a room code'); return; }
     setError(null);
     setLoading('join');
     try {
       const conn = connRef.current;
       if (!conn) throw new Error('Not connected');
-
       const code = joinCode.trim().toUpperCase();
-
-      // Listen for player row appearing (means join succeeded)
       awaitingRoom.current = true;
-      conn.reducers.joinRoom({ roomCode: code, playerName: playerName.trim() });
-      timeoutRef.current = setTimeout(() => {
-        if (awaitingRoom.current) {
-          awaitingRoom.current = false;
-          setLoading(null);
-          setError('Failed to join room — check the code and try again');
-        }
-      }, 10_000);
+      conn.reducers.joinRoom({ roomCode: code })
+        .catch((e: unknown) => failRoom(e instanceof Error ? e.message : 'Failed to join room'));
+      timeoutRef.current = setTimeout(() => failRoom('Failed to join room — check the code and try again'), 10_000);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to join room');
       awaitingRoom.current = false;
@@ -145,98 +132,194 @@ export default function LandingPage() {
     }
   };
 
+  // ── Auth gating ──────────────────────────────────────────────────────────────
+  if (auth.isLoading) {
+    return <Splash text="Loading…" />;
+  }
+
+  if (!auth.isAuthenticated) {
+    return (
+      <div className="page-wrapper" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+        <SparkleField />
+        <div className="page-content" style={{ paddingTop: 80, paddingBottom: 48, textAlign: 'center' }}>
+          <LogoDisplay />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--black)', opacity: 0.6, maxWidth: 300, margin: '0 auto 32px', lineHeight: 1.5 }}>
+            Race to recreate images using AI prompts. Sign in to create your profile and play.
+          </p>
+          <button className="btn btn-primary" onClick={() => auth.signinRedirect()}>
+            Sign In ▶
+          </button>
+          {auth.error && (
+            <p style={{ marginTop: 16, fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--coral)' }}>
+              {auth.error.message}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Authenticated: still connecting / loading profile
+  const ready = !profileLoading;
+
   return (
     <div className="page-wrapper" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
       <SparkleField />
+
+      <button
+        onClick={() => auth.signoutRedirect()}
+        aria-label="Sign out"
+        title="Sign out"
+        style={{
+          position: 'fixed', top: 16, right: 16, zIndex: 100,
+          width: 36, height: 36, borderRadius: '50%',
+          background: 'var(--white)', border: 'var(--border)',
+          boxShadow: 'var(--shadow-sm)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 16, padding: 0,
+          transition: 'background 120ms ease',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--track)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'var(--white)')}
+      >
+        ⏻
+      </button>
+
+      {ready && !profile && <ProfileModal onCreate={createProfile} />}
+      {showEditProfile && profile && (
+        <ProfileModal
+          onUpdate={async (name, avatarId) => { await updateProfile(name, avatarId); setShowEditProfile(false); }}
+          onClose={() => setShowEditProfile(false)}
+          initialName={profile.displayName}
+          initialAvatarId={profile.avatarId}
+        />
+      )}
+
       <div className="page-content" style={{ paddingTop: 60, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {/* Hero */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }} className="animate-slide-up">
+        <div style={{ textAlign: 'center', marginBottom: 24 }} className="animate-slide-up">
           <LogoDisplay />
           <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--black)', opacity: 0.6, maxWidth: 280, margin: '0 auto', lineHeight: 1.5 }}>
             Race to recreate images using AI prompts. Every token counts.
           </p>
         </div>
 
-        {/* Name input */}
-        <div style={{ marginBottom: 24 }} className="animate-slide-up stagger-1">
-          <label style={{ display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Your Name
-          </label>
-          <input className="input" type="text" placeholder="Enter your display name..."
-            value={playerName} onChange={e => saveName(e.target.value)}
-            onKeyDown={handleKeyDown} maxLength={20} autoFocus />
-        </div>
-
-        {/* Tab switcher */}
-        <div style={{ display: 'flex', background: 'var(--track)', borderRadius: 'var(--radius-pill)', padding: 4, marginBottom: 20, border: 'var(--border)' }} className="animate-slide-up stagger-2">
-          <TabButton active={tab === 'create'} onClick={() => setTab('create')}>Create Room</TabButton>
-          <TabButton active={tab === 'join'} onClick={() => setTab('join')}>Join Room</TabButton>
-        </div>
-
-        {tab === 'create' && (
-          <div className="animate-slide-up" key="create">
-            <div className="card" style={{ marginBottom: 16, textAlign: 'center' }}>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, marginBottom: 8 }}>A 6-character room code will be generated.</p>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7 }}>Share it with friends to play together!</p>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{
-                display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700,
-                fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em',
-              }}>
-                Rounds
-              </label>
+        {/* Profile widget */}
+        {profile && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }} className="animate-slide-up stagger-1">
+            <div style={{ position: 'relative', display: 'inline-block' }}>
               <div style={{
-                display: 'flex', background: 'var(--track)',
-                borderRadius: 'var(--radius-pill)', padding: 4, border: 'var(--border)',
+                width: 76, height: 76, borderRadius: '50%',
+                background: 'var(--white)', border: 'var(--border)',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 38,
               }}>
-                {([1, 3, 5] as const).map(n => (
-                  <button
-                    key={n}
-                    onClick={() => setRoundCount(n)}
-                    style={{
-                      flex: 1, padding: '10px 0',
-                      border: roundCount === n ? 'var(--border)' : '2px solid transparent',
-                      borderRadius: 'var(--radius-pill)',
-                      background: roundCount === n ? 'var(--white)' : 'transparent',
-                      fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
-                      cursor: 'pointer',
-                      boxShadow: roundCount === n ? 'var(--shadow-sm)' : 'none',
-                      transition: 'all 120ms ease', color: 'var(--black)',
-                    }}
-                  >
-                    {n}
-                  </button>
-                ))}
+                {AVATARS[profile.avatarId % AVATARS.length] ?? '🎨'}
               </div>
+              <button
+                onClick={() => setShowEditProfile(true)}
+                aria-label="Edit profile"
+                style={{
+                  position: 'absolute', top: -4, right: -4,
+                  width: 26, height: 26, borderRadius: '50%',
+                  background: 'var(--white)', border: 'var(--border)',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 13, padding: 0,
+                  transition: 'background 120ms ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--track)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--white)')}
+              >
+                ⚙️
+              </button>
             </div>
-            <button className="btn btn-primary" onClick={handleCreateRoom} disabled={loading !== null}>
-              {loading === 'create' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Creating...</span> : <>Create Room ▶</>}
-            </button>
+            <span style={{
+              marginTop: 10, fontFamily: 'var(--font-body)',
+              fontWeight: 700, fontSize: 15,
+            }}>
+              {profile.displayName}
+            </span>
           </div>
         )}
 
-        {tab === 'join' && (
-          <div className="animate-slide-up" key="join">
-            <input className="input" type="text" placeholder="Enter room code (e.g. ABC123)"
-              value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
-              onKeyDown={handleKeyDown} maxLength={6}
-              style={{ marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }} />
-            <button className="btn btn-primary" onClick={handleJoinRoom} disabled={loading !== null}>
-              {loading === 'join' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Joining...</span> : <>Join Room ▶</>}
-            </button>
-          </div>
-        )}
+        {ready && !profile ? null : !ready ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', fontFamily: 'var(--font-body)', opacity: 0.6 }}>Loading profile…</div>
+        ) : (
+          <>
+            {/* Tab switcher */}
+            <div style={{ display: 'flex', background: 'var(--track)', borderRadius: 'var(--radius-pill)', padding: 4, marginBottom: 20, border: 'var(--border)' }} className="animate-slide-up stagger-2">
+              <TabButton active={tab === 'create'} onClick={() => setTab('create')}>Create Room</TabButton>
+              <TabButton active={tab === 'join'} onClick={() => setTab('join')}>Join Room</TabButton>
+            </div>
 
-        {error && (
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--coral)', border: 'var(--border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)', boxShadow: 'var(--shadow-sm)' }}>
-            {error}
-          </div>
-        )}
+            {tab === 'create' && (
+              <div className="animate-slide-up" key="create">
+                <div className="card" style={{ marginBottom: 16, textAlign: 'center' }}>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, marginBottom: 8 }}>A 6-character room code will be generated.</p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7 }}>Share it with friends to play together!</p>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{
+                    display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700,
+                    fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em',
+                  }}>
+                    Rounds
+                  </label>
+                  <div style={{
+                    display: 'flex', background: 'var(--track)',
+                    borderRadius: 'var(--radius-pill)', padding: 4, border: 'var(--border)',
+                  }}>
+                    {([1, 3, 5] as const).map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setRoundCount(n)}
+                        style={{
+                          flex: 1, padding: '10px 0',
+                          border: roundCount === n ? 'var(--border)' : '2px solid transparent',
+                          borderRadius: 'var(--radius-pill)',
+                          background: roundCount === n ? 'var(--white)' : 'transparent',
+                          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+                          cursor: 'pointer',
+                          boxShadow: roundCount === n ? 'var(--shadow-sm)' : 'none',
+                          transition: 'all 120ms ease', color: 'var(--black)',
+                        }}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button className="btn btn-primary" onClick={handleCreateRoom} disabled={loading !== null} onKeyDown={handleKeyDown}>
+                  {loading === 'create' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Creating...</span> : <>Create Room ▶</>}
+                </button>
+              </div>
+            )}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="btn btn-ghost" onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
-        </div>
+            {tab === 'join' && (
+              <div className="animate-slide-up" key="join">
+                <input className="input" type="text" placeholder="Enter room code (e.g. ABC123)"
+                  value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={handleKeyDown} maxLength={6}
+                  style={{ marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }} />
+                <button className="btn btn-primary" onClick={handleJoinRoom} disabled={loading !== null}>
+                  {loading === 'join' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Joining...</span> : <>Join Room ▶</>}
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--coral)', border: 'var(--border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)', boxShadow: 'var(--shadow-sm)' }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button className="btn btn-ghost" onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
+            </div>
+          </>
+        )}
 
         <div style={{ marginTop: 28 }} className="animate-slide-up stagger-4">
           <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, marginBottom: 16, letterSpacing: '-0.01em' }}>How to Play</h2>
@@ -255,6 +338,14 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Splash({ text }: { text: string }) {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, opacity: 0.7 }}>{text}</p>
     </div>
   );
 }
