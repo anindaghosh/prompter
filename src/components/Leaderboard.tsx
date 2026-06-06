@@ -51,16 +51,17 @@ export default function Leaderboard({
           const isMe = entry.playerId === myPlayerId;
           const isTop3 = entry.rank <= 3;
 
+          const hasRounds = entry.roundScores && entry.roundScores.length > 0;
+
           return (
             <div
               key={entry.playerId}
-              className={`player-row ${isMe ? 'is-you' : ''} ${isTop3 && !isMe ? `rank-${entry.rank}` : ''} animate-slide-up`}
-              style={{
-                animationDelay: `${i * 0.1}s`,
-                opacity: 0,
-                animationFillMode: 'forwards',
-              }}
+              className={`animate-slide-up`}
+              style={{ animationDelay: `${i * 0.1}s`, opacity: 0, animationFillMode: 'forwards' }}
             >
+              <div
+                className={`player-row ${isMe ? 'is-you' : ''} ${isTop3 && !isMe ? `rank-${entry.rank}` : ''}`}
+              >
               {/* Rank */}
               <div style={{
                 fontFamily: 'var(--font-display)',
@@ -78,29 +79,12 @@ export default function Leaderboard({
                 {entry.playerAvatar ?? entry.avatar}
               </div>
 
-              {/* Name + round history */}
+              {/* Name */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14 }}>
                   {entry.playerName}
                   {isMe && <span style={{ fontWeight: 400, opacity: 0.6 }}> (You)</span>}
                 </div>
-                {entry.roundScores && entry.roundScores.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
-                    {entry.roundScores.map((score, ri) => (
-                      <span key={ri} style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 10,
-                        fontWeight: 600,
-                        padding: '1px 6px',
-                        background: 'rgba(0,0,0,0.06)',
-                        borderRadius: 'var(--radius-pill)',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        R{ri + 1}: {score}{entry.roundDoublePoints?.[ri] ? ' ⭐' : ''}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Score */}
@@ -117,6 +101,34 @@ export default function Leaderboard({
                   pts
                 </span>
               </div>
+              </div>
+
+              {/* Round breakdown */}
+              {hasRounds && (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                  padding: '8px 12px',
+                  marginTop: 4,
+                  background: 'rgba(0,0,0,0.04)',
+                  borderRadius: 'var(--radius-md)',
+                }}>
+                  {entry.roundScores!.map((score, ri) => (
+                    <span key={ri} style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: '3px 10px',
+                      background: 'rgba(255,255,255,0.7)',
+                      borderRadius: 'var(--radius-pill)',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      R{ri + 1}: {score}{entry.roundDoublePoints?.[ri] ? ' ⭐' : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
