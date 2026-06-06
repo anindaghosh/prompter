@@ -163,6 +163,18 @@ const playerPowerup = table(
   }
 );
 
+// Global leaderboard: one row per player name, ranked by wins
+const globalLeaderboard = table(
+  { name: 'global_leaderboard', public: true },
+  {
+    player_name:   t.string().primaryKey(),
+    wins:          t.u32(),
+    games_played:  t.u32(),
+    best_score:    t.u32(), // tiebreaker
+    updated_at_us: t.u64(),
+  }
+);
+
 // Event table: targeted powerup notifications (not stored in client cache)
 const powerupEvent = table(
   { name: 'powerup_event', event: true, public: true },
@@ -216,7 +228,7 @@ const roundEndTimer = table(
 
 const spacetimedb = schema({
   room, player, submission, roundResult, playerPowerup, powerupEvent,
-  countdownTimer, roundStartTimer, roundEndTimer,
+  countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard,
 });
 export default spacetimedb;
 
@@ -707,6 +719,33 @@ export const nextRound = spacetimedb.reducer(
 
     if (rm.current_round >= rm.total_rounds) {
       ctx.db.room.code.update({ ...rm, phase: 'leaderboard' });
+
+      // Upsert global leaderboard: track wins and games played
+      const nowUs: bigint = ctx.timestamp.microsSinceUnixEpoch;
+      const allPlayers = [...ctx.db.player.by_room.filter(roomCode)];
+      const topScore = allPlayers.reduce((max, p) => Math.max(max, p.total_score), 0);
+
+      for (const pl of allPlayers) {
+        const isWinner = pl.total_score === topScore;
+        const existing = ctx.db.globalLeaderboard.player_name.find(pl.name);
+        if (!existing) {
+          ctx.db.globalLeaderboard.insert({
+            player_name:   pl.name,
+            wins:          isWinner ? 1 : 0,
+            games_played:  1,
+            best_score:    pl.total_score,
+            updated_at_us: nowUs,
+          });
+        } else {
+          ctx.db.globalLeaderboard.player_name.update({
+            ...existing,
+            wins:          existing.wins + (isWinner ? 1 : 0),
+            games_played:  existing.games_played + 1,
+            best_score:    Math.max(existing.best_score, pl.total_score),
+            updated_at_us: nowUs,
+          });
+        }
+      }
     } else {
       startRound(ctx, roomCode, rm);
     }
