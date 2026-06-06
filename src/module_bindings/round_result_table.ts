@@ -24,4 +24,9 @@ export default __t.row({
   roundScore: __t.u32().name("round_score"),
   placement: __t.u32(),
   reasoning: __t.string(),
+  scoreBreakdown: __t.string().name("score_breakdown"),
+  hadDoublePoints: __t.bool().name("had_double_points"),
+  simScore: __t.u32().name("sim_score"),
+  effScore: __t.u32().name("eff_score"),
+  speedScore: __t.u32().name("speed_score"),
 });

@@ -506,6 +506,11 @@ h1, h2, h3 {
   to   { transform: translateY(0);    opacity: 1; }
 }
 
+@keyframes slide-in-card {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
 @keyframes slide-in-left {
   from { transform: translateX(-100%); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }

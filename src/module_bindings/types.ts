@@ -107,6 +107,11 @@ export const RoundResult = __t.object("RoundResult", {
   roundScore: __t.u32(),
   placement: __t.u32(),
   reasoning: __t.string(),
+  scoreBreakdown: __t.string(),
+  hadDoublePoints: __t.bool(),
+  simScore: __t.u32(),
+  effScore: __t.u32(),
+  speedScore: __t.u32(),
 });
 export type RoundResult = __Infer<typeof RoundResult>;
 

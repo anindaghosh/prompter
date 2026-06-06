@@ -81,7 +81,7 @@ Return ONLY valid JSON with this exact format:
     "subjectContent": <integer 0-100>,
     "styleAtmosphere": <integer 0-100>
   },
-  "reasoning": "<2-3 sentence explanation of the score, what matched well and what didn't>"
+  "reasoning": "<one game tip, max 15 words, actionable, what the player should try differently next round to score higher. Examples: 'Specify the lighting mood — warm vs cool shifts the whole score.' or 'Name the art style explicitly next time.' or 'You nailed the subject — trim 10 more tokens for an efficiency boost.'>"
 }`;
 
         const response = await ai.models.generateContent({

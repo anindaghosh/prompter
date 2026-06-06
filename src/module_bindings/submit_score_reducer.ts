@@ -16,4 +16,5 @@ export default {
   similarityScore: __t.u32(),
   imageData: __t.string(),
   reasoning: __t.string(),
+  scoreBreakdown: __t.string(),
 };

@@ -78,12 +78,29 @@ export default function Leaderboard({
                 {entry.playerAvatar ?? entry.avatar}
               </div>
 
-              {/* Name */}
+              {/* Name + round history */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14 }}>
                   {entry.playerName}
                   {isMe && <span style={{ fontWeight: 400, opacity: 0.6 }}> (You)</span>}
                 </div>
+                {entry.roundScores && entry.roundScores.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+                    {entry.roundScores.map((score, ri) => (
+                      <span key={ri} style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        padding: '1px 6px',
+                        background: 'rgba(0,0,0,0.06)',
+                        borderRadius: 'var(--radius-pill)',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        R{ri + 1}: {score}{entry.roundDoublePoints?.[ri] ? ' ⭐' : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Score */}
