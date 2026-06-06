@@ -14,6 +14,16 @@ New features are tracked in `TODO.md`. Use the template at the top of that file 
 
 **Port note:** SpacetimeDB's local server binds to port 3000, so Next.js must run on a different port (3001).
 
+**Quick restart:** `dev.sh` at the repo root kills any running processes, rebuilds and republishes the server module, regenerates bindings, and starts Next.js on port 3001 in one step:
+
+```bash
+./dev.sh
+```
+
+If you hit a schema conflict (e.g. after adding a new table), edit the publish line in `dev.sh` to add `--delete-data always`.
+
+**Manual steps** (if you need finer control):
+
 ```bash
 # 1. Configure environment for local dev
 #    Set NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:3000 in .env.local
