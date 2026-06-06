@@ -47,6 +47,7 @@ import UsePowerupReducer from "./use_powerup_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import GlobalLeaderboardRow from "./global_leaderboard_table";
 import PlayerRow from "./player_table";
 import PlayerPowerupRow from "./player_powerup_table";
 import PowerupEventRow from "./powerup_event_table";
@@ -58,6 +59,17 @@ import SubmissionRow from "./submission_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  globalLeaderboard: __table({
+    name: 'global_leaderboard',
+    indexes: [
+      { accessor: 'player_name', name: 'global_leaderboard_player_name_idx_btree', algorithm: 'btree', columns: [
+        'playerName',
+      ] },
+    ],
+    constraints: [
+      { name: 'global_leaderboard_player_name_key', constraint: 'unique', columns: ['playerName'] },
+    ],
+  }, GlobalLeaderboardRow),
   player: __table({
     name: 'player',
     indexes: [

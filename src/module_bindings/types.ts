@@ -18,6 +18,15 @@ export const CountdownTimer = __t.object("CountdownTimer", {
 });
 export type CountdownTimer = __Infer<typeof CountdownTimer>;
 
+export const GlobalLeaderboard = __t.object("GlobalLeaderboard", {
+  playerName: __t.string(),
+  wins: __t.u32(),
+  gamesPlayed: __t.u32(),
+  bestScore: __t.u32(),
+  updatedAtUs: __t.u64(),
+});
+export type GlobalLeaderboard = __Infer<typeof GlobalLeaderboard>;
+
 export const Player = __t.object("Player", {
   identity: __t.identity(),
   roomCode: __t.string(),
