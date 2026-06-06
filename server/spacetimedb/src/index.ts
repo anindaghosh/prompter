@@ -193,6 +193,15 @@ const globalLeaderboard = table(
   }
 );
 
+// Static game tips shown during scoring/waiting phases, seeded once in init
+const gameTip = table(
+  { name: 'game_tip', public: true },
+  {
+    id:   t.u32().primaryKey(),
+    text: t.string(),
+  }
+);
+
 // Event table: targeted powerup notifications (not stored in client cache)
 const powerupEvent = table(
   { name: 'powerup_event', event: true, public: true },
@@ -246,13 +255,49 @@ const roundEndTimer = table(
 
 const spacetimedb = schema({
   room, player, userProfile, submission, roundResult, playerPowerup, powerupEvent,
-  countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard,
+  countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard, gameTip,
 });
 export default spacetimedb;
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
-export const init = spacetimedb.init(_ctx => {});
+const GAME_TIPS = [
+  'Front-load the subject: name what the image IS before describing how it looks.',
+  'Specific nouns beat adjectives. "golden retriever" scores higher than "cute dog".',
+  'Spend tokens on what the AI can see: composition, color, lighting, style.',
+  'Skip filler words like "a", "very", "really" — they cost tokens and add nothing.',
+  'Name the art style or medium (oil painting, photograph, 3D render) for a fast similarity boost.',
+  'Color palette matters: call out dominant colors to nail the color-match score.',
+  'Submit early — speed is scored. A good prompt now beats a perfect prompt late.',
+  'Save the Freeze powerup for a leading rival right before the round ends.',
+  'Use the Hint powerup when you are stuck — revealed keywords are worth more than guessing.',
+  'Token Shield protects your budget; play it before someone drains you.',
+  'Describe lighting direction: "harsh midday sun" and "soft backlit glow" change scores dramatically.',
+  'Camera angle is a free token: "bird\'s eye view", "close-up", "wide shot" costs one word and shifts composition scores.',
+  'Double Points powerup is best saved for rounds with a reference image you recognize instantly.',
+  'Use the Category powerup early — knowing the theme lets you spend every token precisely.',
+  'Mood words like "melancholy", "joyful", or "serene" shift the AI\'s color and tone choices in your favor.',
+  'Foreground and background are two free composition wins: "mountains in background, river in foreground".',
+  'Texture words score well on close-up images: "rough bark", "smooth marble", "frayed fabric".',
+  'Season and time of day add rich visual detail cheaply: "golden hour", "winter fog", "midday summer".',
+  'If the image looks like a famous artwork, name the movement: "impressionist", "baroque", "art nouveau".',
+  'Efficiency score is 25% of total — a tight 40-token prompt that nails similarity beats a sloppy 100-token one.',
+];
+
+export const init = spacetimedb.init(ctx => {
+  if ([...ctx.db.gameTip.iter()].length === 0) {
+    GAME_TIPS.forEach((text, i) => ctx.db.gameTip.insert({ id: i, text }));
+  }
+});
+
+// Additive seed: inserts any tip whose id doesn't exist yet — safe to call multiple times
+export const seedTips = spacetimedb.reducer((ctx) => {
+  GAME_TIPS.forEach((text, i) => {
+    if (!ctx.db.gameTip.id.find(i)) {
+      ctx.db.gameTip.insert({ id: i, text });
+    }
+  });
+});
 
 export const onConnect = spacetimedb.clientConnected(ctx => {
   // Restore online status if player already exists

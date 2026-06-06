@@ -18,6 +18,12 @@ export const CountdownTimer = __t.object("CountdownTimer", {
 });
 export type CountdownTimer = __Infer<typeof CountdownTimer>;
 
+export const GameTip = __t.object("GameTip", {
+  id: __t.u32(),
+  text: __t.string(),
+});
+export type GameTip = __Infer<typeof GameTip>;
+
 export const GlobalLeaderboard = __t.object("GlobalLeaderboard", {
   playerName: __t.string(),
   wins: __t.u32(),

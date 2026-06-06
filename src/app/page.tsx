@@ -49,6 +49,8 @@ export default function LandingPage() {
   const awaitingRoom = useRef(false);
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const identityRef = useRef<any>(null);
 
   // Surface redirect errors from other pages
   useEffect(() => {
@@ -63,6 +65,7 @@ export default function LandingPage() {
     onStdbConnected((conn, identity) => {
       connRef.current = conn;
       const hex = identity.toHexString();
+      identityRef.current = identity;
 
       conn.subscriptionBuilder()
         .onApplied(() => {})
@@ -114,6 +117,18 @@ export default function LandingPage() {
       const conn = connRef.current;
       if (!conn) throw new Error('Not connected');
       const code = joinCode.trim().toUpperCase();
+
+      // Reconnect case: onConnect already set is_online=true server-side,
+      // so joinRoom UPDATE triggers no onUpdate event. Detect via local cache.
+      if (identityRef.current) {
+        const myPlayer = conn.db.player.identity.find(identityRef.current);
+        if (myPlayer && myPlayer.roomCode === code) {
+          setLoading(null);
+          router.push(`/room/${code}`);
+          return;
+        }
+      }
+
       awaitingRoom.current = true;
       conn.reducers.joinRoom({ roomCode: code })
         .catch((e: unknown) => failRoom(e instanceof Error ? e.message : 'Failed to join room'));

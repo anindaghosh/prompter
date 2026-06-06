@@ -49,6 +49,7 @@ import UsePowerupReducer from "./use_powerup_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import GameTipRow from "./game_tip_table";
 import GlobalLeaderboardRow from "./global_leaderboard_table";
 import PlayerRow from "./player_table";
 import PlayerPowerupRow from "./player_powerup_table";
@@ -62,6 +63,17 @@ import UserProfileRow from "./user_profile_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  gameTip: __table({
+    name: 'game_tip',
+    indexes: [
+      { accessor: 'id', name: 'game_tip_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'game_tip_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, GameTipRow),
   globalLeaderboard: __table({
     name: 'global_leaderboard',
     indexes: [
