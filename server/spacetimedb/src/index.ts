@@ -4,7 +4,6 @@ import { ScheduleAt } from 'spacetimedb';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROUND_DURATION_US = 90_000_000n; // 90 seconds in microseconds
-const TOTAL_ROUNDS = 3;
 const TOKEN_BUDGET = 120;
 
 const POWERUP_POOL = ['TOKEN_DRAIN', 'FREEZE', 'TOKEN_SHIELD', 'HINT', 'DOUBLE_POINTS', 'CATEGORY'];
@@ -367,8 +366,11 @@ function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs
 // ─── Reducers ─────────────────────────────────────────────────────────────────
 
 export const createRoom = spacetimedb.reducer(
-  { playerName: t.string() },
-  (ctx, { playerName }) => {
+  { playerName: t.string(), totalRounds: t.u32() },
+  (ctx, { playerName, totalRounds }) => {
+    if (![1, 3, 5].includes(totalRounds)) {
+      throw new Error(`totalRounds must be 1, 3, or 5`);
+    }
     // Evict any existing player row (stale from disconnect or prior session)
     const stale = ctx.db.player.identity.find(ctx.sender);
     if (stale) {
@@ -395,7 +397,7 @@ export const createRoom = spacetimedb.reducer(
       phase: 'lobby',
       host_identity: ctx.sender,
       current_round: 0,
-      total_rounds: TOTAL_ROUNDS,
+      total_rounds: totalRounds,
       current_image_id: '',
       round_start_us: 0n,
       token_budget: TOKEN_BUDGET,

@@ -37,6 +37,7 @@ export default function LandingPage() {
   const [playerName, setPlayerName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [tab, setTab] = useState<'create' | 'join'>('create');
+  const [roundCount, setRoundCount] = useState<1 | 3 | 5>(3);
   const [loading, setLoading] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const awaitingRoom = useRef(false);
@@ -94,7 +95,7 @@ export default function LandingPage() {
       const conn = connRef.current;
       if (!conn) throw new Error('Not connected');
       awaitingRoom.current = true;
-      conn.reducers.createRoom({ playerName: playerName.trim() });
+      conn.reducers.createRoom({ playerName: playerName.trim(), totalRounds: roundCount });
       timeoutRef.current = setTimeout(() => {
         if (awaitingRoom.current) {
           awaitingRoom.current = false;
@@ -177,6 +178,37 @@ export default function LandingPage() {
             <div className="card" style={{ marginBottom: 16, textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, marginBottom: 8 }}>A 6-character room code will be generated.</p>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7 }}>Share it with friends to play together!</p>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{
+                display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700,
+                fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>
+                Rounds
+              </label>
+              <div style={{
+                display: 'flex', background: 'var(--track)',
+                borderRadius: 'var(--radius-pill)', padding: 4, border: 'var(--border)',
+              }}>
+                {([1, 3, 5] as const).map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setRoundCount(n)}
+                    style={{
+                      flex: 1, padding: '10px 0',
+                      border: roundCount === n ? 'var(--border)' : '2px solid transparent',
+                      borderRadius: 'var(--radius-pill)',
+                      background: roundCount === n ? 'var(--white)' : 'transparent',
+                      fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+                      cursor: 'pointer',
+                      boxShadow: roundCount === n ? 'var(--shadow-sm)' : 'none',
+                      transition: 'all 120ms ease', color: 'var(--black)',
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
             <button className="btn btn-primary" onClick={handleCreateRoom} disabled={loading !== null}>
               {loading === 'create' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Creating...</span> : <>Create Room ▶</>}

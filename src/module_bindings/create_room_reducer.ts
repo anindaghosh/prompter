@@ -12,4 +12,5 @@ import {
 
 export default {
   playerName: __t.string(),
+  totalRounds: __t.u32(),
 };
