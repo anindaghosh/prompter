@@ -12,5 +12,4 @@ import {
 
 export default {
   roomCode: __t.string(),
-  playerName: __t.string(),
 };

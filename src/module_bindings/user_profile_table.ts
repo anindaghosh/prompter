@@ -10,6 +10,11 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
-  totalRounds: __t.u32(),
-};
+export default __t.row({
+  identity: __t.identity().primaryKey(),
+  displayName: __t.string().name("display_name"),
+  displayNameLower: __t.string().name("display_name_lower"),
+  avatarId: __t.u32().name("avatar_id"),
+  createdAt: __t.timestamp().name("created_at"),
+  updatedAt: __t.timestamp().name("updated_at"),
+});

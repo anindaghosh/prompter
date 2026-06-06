@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getStdbConnection, onStdbConnected } from '@/lib/spacetimedb';
+import { useAuth } from 'react-oidc-context';
+import { onStdbConnected } from '@/lib/spacetimedb';
+import { useProfile } from '@/hooks/useProfile';
 import CountdownTimer from '@/components/CountdownTimer';
 import PlayerList from '@/components/PlayerList';
 import PromptEditor from '@/components/PromptEditor';
@@ -19,11 +21,11 @@ import {
   GamePhase,
   PowerupId,
   POWERUP_DEFS,
+  AVATARS,
 } from '@/hooks/useGameSocket';
 
 // ── Client-side constants matching server ────────────────────────────────────
 
-const AVATARS = ['🦸', '🧙', '🤖', '👾', '🦊', '🐉', '🦅', '🐺', '🦁', '🐯'];
 const ROUND_DURATION_MS = 90_000;
 
 const REFERENCE_IMAGES = [
@@ -61,7 +63,17 @@ const INITIAL: GameState = {
 export default function GameRoomPage() {
   const params = useParams();
   const router = useRouter();
+  const auth = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const code = (params?.code as string ?? '').toUpperCase();
+
+  // Auth gate: a profile is required to enter a room. Send unauthenticated players
+  // (or authenticated players without a profile) back to the landing page.
+  useEffect(() => {
+    if (auth.isLoading) return;
+    if (!auth.isAuthenticated) { router.replace('/'); return; }
+    if (!profileLoading && !profile) router.replace('/');
+  }, [auth.isLoading, auth.isAuthenticated, profileLoading, profile, router]);
 
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
   const myHexRef = useRef<string | null>(null);
@@ -205,12 +217,9 @@ export default function GameRoomPage() {
 
   useEffect(() => {
     if (!code) return;
-    const playerName = localStorage.getItem('promptinary_name') || 'Anonymous';
-
-    const conn = getStdbConnection();
-    connRef.current = conn;
 
     onStdbConnected((conn, identity) => {
+      connRef.current = conn;
       myHexRef.current = identity.toHexString();
 
       // Subscribe to all game tables for this room
@@ -234,7 +243,8 @@ export default function GameRoomPage() {
               router.replace('/?error=game-in-progress');
               return;
             }
-            conn.reducers.joinRoom({ roomCode: code, playerName });
+            conn.reducers.joinRoom({ roomCode: code })
+              .catch(() => router.replace('/?error=room-not-found'));
           }
 
           rebuildFromDB();
@@ -524,10 +534,15 @@ export default function GameRoomPage() {
           </div>
         )}
         {gs.phase === 'leaderboard' && (
-          <Leaderboard entries={gs.leaderboard} myPlayerId={gs.myPlayerId}
-            currentRound={gs.currentRound} totalRounds={gs.totalRounds}
-            isHost={isHost} onNextRound={nextRound} onPlayAgain={playAgain}
-            isGameOver={gs.currentRound >= gs.totalRounds} />
+          <>
+            <Leaderboard entries={gs.leaderboard} myPlayerId={gs.myPlayerId}
+              currentRound={gs.currentRound} totalRounds={gs.totalRounds}
+              isHost={isHost} onNextRound={nextRound} onPlayAgain={playAgain}
+              isGameOver={gs.currentRound >= gs.totalRounds} />
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+              <button className="btn btn-ghost" onClick={() => router.push('/profile')}>👤 View Profile</button>
+            </div>
+          </>
         )}
       </div>
     </div>

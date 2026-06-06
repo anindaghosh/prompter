@@ -1,5 +1,11 @@
 'use client';
 
+// ── Avatars ───────────────────────────────────────────────────────────────────
+// Selectable emoji avatars. Index into this array is stored as `avatar_id` on the
+// server `user_profile` table — this list MUST stay identical and identically ordered
+// to the `AVATARS` array in server/spacetimedb/src/index.ts.
+export const AVATARS = ['🦸', '🧙', '🤖', '👾', '🦊', '🐉', '🦅', '🐺', '🦁', '🐯'];
+
 // ── Types used across game components ─────────────────────────────────────────
 
 export interface Player {

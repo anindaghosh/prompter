@@ -1,4 +1,4 @@
-import { schema, table, t } from 'spacetimedb/server';
+import { schema, table, t, SenderError } from 'spacetimedb/server';
 import { ScheduleAt } from 'spacetimedb';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -89,6 +89,20 @@ const player = table(
     is_online:   t.bool(),
     total_score: t.u32(),
     round_scores: t.string(), // JSON number[]
+  }
+);
+
+// Persistent per-identity profile (display name + chosen avatar).
+// Identity is OIDC-derived (SpacetimeAuth), so this carries across sessions/devices.
+const userProfile = table(
+  { name: 'user_profile', public: true },
+  {
+    identity:           t.identity().primaryKey(),
+    display_name:       t.string(),          // original casing, shown in UI
+    display_name_lower: t.string().unique(), // case-insensitive uniqueness key
+    avatar_id:          t.u32(),             // index into AVATARS
+    created_at:         t.timestamp(),
+    updated_at:         t.timestamp(),
   }
 );
 
@@ -231,7 +245,7 @@ const roundEndTimer = table(
 );
 
 const spacetimedb = schema({
-  room, player, submission, roundResult, playerPowerup, powerupEvent,
+  room, player, userProfile, submission, roundResult, playerPowerup, powerupEvent,
   countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard,
 });
 export default spacetimedb;
@@ -279,11 +293,15 @@ export const onDisconnect = spacetimedb.clientDisconnected(ctx => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function avatarIndex(identity: any): number {
-  const hex: string = identity.toHexString();
-  let sum = 0;
-  for (let i = 0; i < hex.length; i++) sum += hex.charCodeAt(i);
-  return sum % AVATARS.length;
+function validateProfileInput(displayName: string, avatarId: number): string {
+  const name = displayName.trim();
+  if (name.length < 3 || name.length > 20) {
+    throw new SenderError('Display name must be 3–20 characters.');
+  }
+  if (avatarId >= AVATARS.length) {
+    throw new SenderError('Invalid avatar selection.');
+  }
+  return name;
 }
 
 function startRound(ctx: any, roomCode: string, rm: any) {
@@ -375,12 +393,59 @@ function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs
 
 // ─── Reducers ─────────────────────────────────────────────────────────────────
 
-export const createRoom = spacetimedb.reducer(
-  { playerName: t.string(), totalRounds: t.u32() },
-  (ctx, { playerName, totalRounds }) => {
-    if (![1, 3, 5].includes(totalRounds)) {
-      throw new Error(`totalRounds must be 1, 3, or 5`);
+export const createProfile = spacetimedb.reducer(
+  { displayName: t.string(), avatarId: t.u32() },
+  (ctx, { displayName, avatarId }) => {
+    if (ctx.db.userProfile.identity.find(ctx.sender)) {
+      throw new SenderError('Profile already exists.');
     }
+    const name = validateProfileInput(displayName, avatarId);
+    const lower = name.toLowerCase();
+    if (ctx.db.userProfile.display_name_lower.find(lower)) {
+      throw new SenderError('That display name is taken.');
+    }
+    ctx.db.userProfile.insert({
+      identity:           ctx.sender,
+      display_name:       name,
+      display_name_lower: lower,
+      avatar_id:          avatarId,
+      created_at:         ctx.timestamp,
+      updated_at:         ctx.timestamp,
+    });
+  }
+);
+
+export const updateProfile = spacetimedb.reducer(
+  { displayName: t.string(), avatarId: t.u32() },
+  (ctx, { displayName, avatarId }) => {
+    const existing = ctx.db.userProfile.identity.find(ctx.sender);
+    if (!existing) throw new SenderError('Profile not found.');
+    const name = validateProfileInput(displayName, avatarId);
+    const lower = name.toLowerCase();
+    // Allow keeping the same name; only conflict if a *different* identity owns it.
+    const clash = ctx.db.userProfile.display_name_lower.find(lower);
+    if (clash && !clash.identity.equals(ctx.sender)) {
+      throw new SenderError('That display name is taken.');
+    }
+    ctx.db.userProfile.identity.update({
+      ...existing,
+      display_name:       name,
+      display_name_lower: lower,
+      avatar_id:          avatarId,
+      updated_at:         ctx.timestamp,
+    });
+  }
+);
+
+export const createRoom = spacetimedb.reducer(
+  { totalRounds: t.u32() },
+  (ctx, { totalRounds }) => {
+    if (![1, 3, 5].includes(totalRounds)) {
+      throw new SenderError(`totalRounds must be 1, 3, or 5`);
+    }
+    const profile = ctx.db.userProfile.identity.find(ctx.sender);
+    if (!profile) throw new SenderError('Create a profile before creating a room.');
+
     // Evict any existing player row (stale from disconnect or prior session)
     const stale = ctx.db.player.identity.find(ctx.sender);
     if (stale) {
@@ -418,10 +483,10 @@ export const createRoom = spacetimedb.reducer(
     ctx.db.player.insert({
       identity:     ctx.sender,
       room_code:    code,
-      name:         playerName.trim() || 'Player 1',
+      name:         profile.display_name,
       is_ready:     false,
       is_host:      true,
-      avatar_index: avatarIndex(ctx.sender),
+      avatar_index: profile.avatar_id,
       is_online:    true,
       total_score:  0,
       round_scores: '[]',
@@ -445,11 +510,14 @@ export const createRoom = spacetimedb.reducer(
 );
 
 export const joinRoom = spacetimedb.reducer(
-  { roomCode: t.string(), playerName: t.string() },
-  (ctx, { roomCode, playerName }) => {
+  { roomCode: t.string() },
+  (ctx, { roomCode }) => {
     const code = roomCode.toUpperCase();
     const rm = ctx.db.room.code.find(code);
-    if (!rm) throw new Error('Room not found!');
+    if (!rm) throw new SenderError('Room not found!');
+
+    const profile = ctx.db.userProfile.identity.find(ctx.sender);
+    if (!profile) throw new SenderError('Create a profile before joining a room.');
 
     // Idempotent: already in room (reconnect)
     const existing = ctx.db.player.identity.find(ctx.sender);
@@ -458,10 +526,10 @@ export const joinRoom = spacetimedb.reducer(
       return;
     }
 
-    if (rm.phase !== 'lobby') throw new Error('Game already in progress!');
+    if (rm.phase !== 'lobby') throw new SenderError('Game already in progress!');
 
     const players = [...ctx.db.player.by_room.filter(code)];
-    if (players.length >= 8) throw new Error('Room is full (8 players max)!');
+    if (players.length >= 8) throw new SenderError('Room is full (8 players max)!');
 
     // Clean up stale row in a different room
     if (existing) {
@@ -473,10 +541,10 @@ export const joinRoom = spacetimedb.reducer(
     ctx.db.player.insert({
       identity:     ctx.sender,
       room_code:    code,
-      name:         playerName.trim() || `Player ${players.length + 1}`,
+      name:         profile.display_name,
       is_ready:     false,
       is_host:      false,
-      avatar_index: avatarIndex(ctx.sender),
+      avatar_index: profile.avatar_id,
       is_online:    true,
       total_score:  0,
       round_scores: '[]',
@@ -509,10 +577,10 @@ export const startGame = spacetimedb.reducer(
   { roomCode: t.string() },
   (ctx, { roomCode }) => {
     const rm = ctx.db.room.code.find(roomCode);
-    if (!rm) throw new Error('Room not found');
-    if (!rm.host_identity.equals(ctx.sender)) throw new Error('Only host can start');
+    if (!rm) throw new SenderError('Room not found');
+    if (!rm.host_identity.equals(ctx.sender)) throw new SenderError('Only host can start');
     const players = [...ctx.db.player.by_room.filter(roomCode)];
-    if (players.length < 1) throw new Error('Need at least 1 player');
+    if (players.length < 1) throw new SenderError('Need at least 1 player');
     startRound(ctx, roomCode, rm);
   }
 );

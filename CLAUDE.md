@@ -66,6 +66,19 @@ Copy `.env.example` to `.env.local` and fill in:
 - `GEMINI_API_KEY` — Google Gemini API key (used for image generation and scoring)
 - `NEXT_PUBLIC_SPACETIMEDB_URL` — SpacetimeDB WebSocket URL (`ws://localhost:3000` for local, `wss://maincloud.spacetimedb.com` for prod)
 - `NEXT_PUBLIC_SPACETIMEDB_MODULE` — Database name (default: `prompter-hack`)
+- `NEXT_PUBLIC_SPACETIMEAUTH_AUTHORITY` — OIDC issuer (default: `https://auth.spacetimedb.com/oidc`)
+- `NEXT_PUBLIC_SPACETIMEAUTH_CLIENT_ID` — SpacetimeAuth client ID (from the SpacetimeAuth dashboard)
+
+### Authentication
+
+Players sign in via **SpacetimeAuth** (SpacetimeDB's built-in OIDC provider) using
+`react-oidc-context`. The `id_token` is passed to `DbConnection.builder().withToken(...)`;
+the SpacetimeDB identity is derived from it (`iss + sub`) so it is stable across
+sessions/devices. **Login is required to play.** Register the app's redirect URIs
+(`<origin>/callback`, e.g. `http://localhost:3001/callback`) in the SpacetimeAuth dashboard.
+A player's `user_profile` (display name + avatar) is keyed to that identity and is the
+source of truth for the name/avatar shown in the lobby, HUD, and leaderboard — the
+`createRoom`/`joinRoom` reducers read it server-side via `ctx.sender`.
 
 ## Architecture
 
