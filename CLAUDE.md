@@ -10,33 +10,51 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 New features are tracked in `TODO.md`. Use the template at the top of that file for every entry — it captures status, priority, goal, acceptance criteria, and approach.
 
+## Running locally
+
+**Port note:** SpacetimeDB's local server binds to port 3000, so Next.js must run on a different port (3001).
+
+```bash
+# 1. Configure environment for local dev
+#    Set NEXT_PUBLIC_SPACETIMEDB_URL=ws://localhost:3000 in .env.local
+
+# 2. Start SpacetimeDB local server (runs on port 3000)
+spacetime start
+
+# 3. Build and publish the server module to the local instance
+cd server && spacetime publish prompter-hack --server local --yes && cd ..
+
+# 4. Start Next.js on port 3001 (avoids collision with SpacetimeDB)
+npm run dev -- --port 3001
+```
+
+Open http://localhost:3001 in your browser.
+
+**Useful local debugging commands:**
+```bash
+spacetime logs prompter-hack -f                      # Tail server logs
+spacetime sql prompter-hack "SELECT * FROM room"     # Query tables
+```
+
 ## Commands
 
 ```bash
 # Frontend development
-npm run dev          # Start Next.js dev server
+npm run dev          # Start Next.js dev server (default port 3000 — use --port 3001 for local dev)
 npm run build        # Production build
 npm run lint         # ESLint
 
 # SpacetimeDB backend
 npm run stdb:build   # Compile the server module (spacetime build)
-npm run stdb:publish # Deploy to maincloud as "prompter-hack"
+npm run stdb:publish # Deploy to maincloud as "prompter-hack" (requires auth)
 npm run stdb:generate # Regenerate TypeScript client bindings from server schema
-```
-
-**Local SpacetimeDB development:**
-```bash
-spacetime start                           # Start local server
-spacetime publish prompter-hack --server local --yes  # Publish locally
-spacetime logs prompter-hack -f          # Tail server logs
-spacetime sql prompter-hack "SELECT * FROM room"  # Query tables
 ```
 
 ## Environment Setup
 
 Copy `.env.example` to `.env.local` and fill in:
 - `GEMINI_API_KEY` — Google Gemini API key (used for image generation and scoring)
-- `NEXT_PUBLIC_SPACETIMEDB_URL` — SpacetimeDB WebSocket URL (`wss://maincloud.spacetimedb.com` or `ws://localhost:3000`)
+- `NEXT_PUBLIC_SPACETIMEDB_URL` — SpacetimeDB WebSocket URL (`ws://localhost:3000` for local, `wss://maincloud.spacetimedb.com` for prod)
 - `NEXT_PUBLIC_SPACETIMEDB_MODULE` — Database name (default: `prompter-hack`)
 
 ## Architecture
