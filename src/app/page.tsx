@@ -46,6 +46,7 @@ export default function LandingPage() {
   const [roundCount, setRoundCount] = useState<1 | 3 | 5>(3);
   const [loading, setLoading] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
   const awaitingRoom = useRef(false);
   const connRef = useRef<InstanceType<typeof DbConnection> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,6 +67,8 @@ export default function LandingPage() {
       connRef.current = conn;
       const hex = identity.toHexString();
       identityRef.current = identity;
+
+      setConnected(true);
 
       conn.subscriptionBuilder()
         .onApplied(() => {})
@@ -332,6 +335,9 @@ export default function LandingPage() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
+              {connected && (
+                <button className="btn btn-ghost" onClick={() => router.push('/stats')}>📊 My Stats</button>
+              )}
             </div>
           </>
         )}

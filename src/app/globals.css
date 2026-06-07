@@ -566,6 +566,11 @@ h1, h2, h3 {
   100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
 }
 
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* Animation utility classes */
 .animate-pop-in       { animation: pop-in 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
 .animate-slide-up     { animation: slide-up 0.4s ease forwards; }
@@ -574,6 +579,14 @@ h1, h2, h3 {
 .animate-slide-left   { animation: slide-in-left 0.5s ease forwards; }
 .animate-slide-right  { animation: slide-in-right 0.5s ease forwards; }
 .animate-shake        { animation: shake 0.5s ease forwards; }
+
+/* Skeleton loading bars */
+.skeleton-bar {
+  background: linear-gradient(90deg, var(--track) 25%, rgba(0,0,0,0.04) 37%, var(--track) 63%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
 
 /* Stagger helpers */
 .stagger-1 { animation-delay: 0.1s; }

@@ -18,6 +18,20 @@ export const CountdownTimer = __t.object("CountdownTimer", {
 });
 export type CountdownTimer = __Infer<typeof CountdownTimer>;
 
+export const GameHistory = __t.object("GameHistory", {
+  id: __t.u64(),
+  identity: __t.identity(),
+  roomCode: __t.string(),
+  playedAt: __t.timestamp(),
+  finalRank: __t.u32(),
+  playerCount: __t.u32(),
+  totalScore: __t.u32(),
+  avgSimilarity: __t.u32(),
+  roundsPlayed: __t.u32(),
+  roundSummaries: __t.string(),
+});
+export type GameHistory = __Infer<typeof GameHistory>;
+
 export const GameTip = __t.object("GameTip", {
   id: __t.u32(),
   text: __t.string(),
@@ -45,6 +59,15 @@ export const Player = __t.object("Player", {
   roundScores: __t.string(),
 });
 export type Player = __Infer<typeof Player>;
+
+export const PlayerInsights = __t.object("PlayerInsights", {
+  identity: __t.identity(),
+  strengths: __t.string(),
+  weaknesses: __t.string(),
+  improvements: __t.string(),
+  generatedAt: __t.timestamp(),
+});
+export type PlayerInsights = __Infer<typeof PlayerInsights>;
 
 export const PlayerPowerup = __t.object("PlayerPowerup", {
   identity: __t.identity(),
@@ -88,6 +111,7 @@ export const Room = __t.object("Room", {
   tokenBudget: __t.u32(),
   usedImageIds: __t.string(),
   countdownValue: __t.u32(),
+  statsRecorded: __t.bool(),
 });
 export type Room = __Infer<typeof Room>;
 
@@ -150,4 +174,17 @@ export const UserProfile = __t.object("UserProfile", {
   updatedAt: __t.timestamp(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
+
+export const UserStats = __t.object("UserStats", {
+  identity: __t.identity(),
+  gamesPlayed: __t.u32(),
+  gamesWon: __t.u32(),
+  totalScore: __t.u64(),
+  bestScore: __t.u32(),
+  totalSimilarity: __t.u64(),
+  totalTokens: __t.u64(),
+  totalRounds: __t.u32(),
+  updatedAt: __t.timestamp(),
+});
+export type UserStats = __Infer<typeof UserStats>;
 

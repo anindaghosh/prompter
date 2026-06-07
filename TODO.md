@@ -31,7 +31,7 @@ List any dependencies or blockers.
 
 <!-- Add new features below using the template above -->
 
-### [FEATURE-001] Persistent user profile creation
+### [FEATURE-001] Persistent user profile creation - IMPLEMENTED
 
 **Status:** Draft
 **Priority:** High
@@ -47,7 +47,7 @@ Allow players to create and persist a named profile (display name + avatar) so t
 - [ ] On subsequent visits the player's profile is automatically loaded; no re-entry required
 - [ ] Player can update their display name and avatar from a profile settings screen
 - [ ] Display name uniqueness is enforced server-side (reducer returns an error on conflict)
-- [ ] Profile page is accessible from the landing page and the post-game leaderboard
+- [ ] Profile page is accessible from the landing page 
 
 **Approach**
 - **Backend (`server/spacetimedb/`)**: Add a `user_profile` table (`identity`, `display_name`, `avatar_id`, `created_at`, `updated_at`). Add `create_profile` and `update_profile` reducers; validate name length and uniqueness inside the reducer using `ctx.sender`.
@@ -60,7 +60,7 @@ None — can proceed independently of other features.
 
 ---
 
-### [FEATURE-002] User authentication with SpacetimeDB identity
+### [FEATURE-002] User authentication with SpacetimeDB identity - IMPLEMENTED
 
 **Status:** Draft
 **Priority:** High
@@ -113,7 +113,7 @@ None — can proceed independently of other features.
 ---
 
 ### [FEATURE-003] Persistent user game statistics and
-  profile stats page
+  profile stats page - Implemented
   
   **Status:** Draft
   **Priority:** High
@@ -299,7 +299,7 @@ npm run stdb:generate
 
 ---
 
-### [FEATURE-005] Per-round score breakdown display
+### [FEATURE-005] Per-round score breakdown display - IMPLEMENTED
 
 **Status:** Draft
 **Priority:** Medium

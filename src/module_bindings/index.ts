@@ -39,6 +39,7 @@ import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import NextRoundReducer from "./next_round_reducer";
 import PlayAgainReducer from "./play_again_reducer";
+import SaveInsightsReducer from "./save_insights_reducer";
 import SeedTipsReducer from "./seed_tips_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitPromptReducer from "./submit_prompt_reducer";
@@ -50,20 +51,37 @@ import UsePowerupReducer from "./use_powerup_reducer";
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import GameHistoryRow from "./game_history_table";
 import GameTipRow from "./game_tip_table";
 import GlobalLeaderboardRow from "./global_leaderboard_table";
 import PlayerRow from "./player_table";
+import PlayerInsightsRow from "./player_insights_table";
 import PlayerPowerupRow from "./player_powerup_table";
 import PowerupEventRow from "./powerup_event_table";
 import RoomRow from "./room_table";
 import RoundResultRow from "./round_result_table";
 import SubmissionRow from "./submission_table";
 import UserProfileRow from "./user_profile_table";
+import UserStatsRow from "./user_stats_table";
 
 /** Type-only namespace exports for generated type groups. */
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  gameHistory: __table({
+    name: 'game_history',
+    indexes: [
+      { accessor: 'id', name: 'game_history_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+      { accessor: 'by_identity', name: 'game_history_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'game_history_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, GameHistoryRow),
   gameTip: __table({
     name: 'game_tip',
     indexes: [
@@ -100,6 +118,17 @@ const tablesSchema = __schema({
       { name: 'player_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, PlayerRow),
+  playerInsights: __table({
+    name: 'player_insights',
+    indexes: [
+      { accessor: 'identity', name: 'player_insights_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'player_insights_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, PlayerInsightsRow),
   playerPowerup: __table({
     name: 'player_powerup',
     indexes: [
@@ -188,6 +217,17 @@ const tablesSchema = __schema({
       { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, UserProfileRow),
+  userStats: __table({
+    name: 'user_stats',
+    indexes: [
+      { accessor: 'identity', name: 'user_stats_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'user_stats_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, UserStatsRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -197,6 +237,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("next_round", NextRoundReducer),
   __reducerSchema("play_again", PlayAgainReducer),
+  __reducerSchema("save_insights", SaveInsightsReducer),
   __reducerSchema("seed_tips", SeedTipsReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_prompt", SubmitPromptReducer),
