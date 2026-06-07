@@ -1,10 +1,12 @@
 'use client';
 
 // ── Avatars ───────────────────────────────────────────────────────────────────
-// Selectable emoji avatars. Index into this array is stored as `avatar_id` on the
-// server `user_profile` table — this list MUST stay identical and identically ordered
-// to the `AVATARS` array in server/spacetimedb/src/index.ts.
-export const AVATARS = ['🦸', '🧙', '🤖', '👾', '🦊', '🐉', '🦅', '🐺', '🦁', '🐯'];
+// Selectable bot seeds for DiceBear bottts-neutral. Index is stored as `avatar_id`
+// on the server `user_profile` table — this list MUST stay identical and identically
+// ordered to the `AVATARS` array in server/spacetimedb/src/index.ts.
+export const AVATARS = ['Unit-07', 'HAL', 'WALL-E', 'R2D2', 'GLaDOS', 'Marvin', 'C3PO', 'Data', 'Bender', 'Bishop'];
+export const avatarUrl = (seed: string) =>
+  `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(seed)}`;
 
 // ── Types used across game components ─────────────────────────────────────────
 

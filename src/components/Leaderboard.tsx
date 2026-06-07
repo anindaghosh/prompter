@@ -1,6 +1,6 @@
 'use client';
 
-import { LeaderboardEntry } from '@/hooks/useGameSocket';
+import { LeaderboardEntry, avatarUrl } from '@/hooks/useGameSocket';
 
 const RANK_LABELS = ['01', '02', '03'];
 
@@ -51,7 +51,6 @@ export default function Leaderboard({
           <div className="po-kicker" style={{ color: 'var(--acid)', opacity: 1, marginBottom: 12 }}>Top Players</div>
           {top3.map((entry, i) => {
             const isMe = entry.playerId === myPlayerId;
-            const initials = entry.playerName.slice(0, 2).toUpperCase();
             return (
               <div
                 key={entry.playerId}
@@ -71,8 +70,9 @@ export default function Leaderboard({
                   }}>
                     {RANK_LABELS[entry.rank - 1]}
                   </span>
-                  <div className="po-avatar" style={{ background: isMe ? 'var(--acid)' : 'rgba(255,255,255,0.1)', color: isMe ? 'var(--ink)' : 'var(--paper)', borderColor: isMe ? 'var(--acid)' : 'rgba(255,255,255,0.2)' }}>
-                    {initials}
+                  <div className="po-avatar" style={{ background: isMe ? 'var(--acid)' : 'rgba(255,255,255,0.1)', borderColor: isMe ? 'var(--acid)' : 'rgba(255,255,255,0.2)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {entry.avatar ? <img src={avatarUrl(entry.avatar)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} /> : entry.playerName.slice(0, 2).toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--paper)' }}>
@@ -105,7 +105,6 @@ export default function Leaderboard({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {rest.map((entry, i) => {
             const isMe = entry.playerId === myPlayerId;
-            const initials = entry.playerName.slice(0, 2).toUpperCase();
             return (
               <div
                 key={entry.playerId}
@@ -116,8 +115,9 @@ export default function Leaderboard({
                   <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 14, width: 28, textAlign: 'center', flexShrink: 0, color: isMe ? 'var(--ink)' : 'var(--black)' }}>
                     #{entry.rank}
                   </span>
-                  <div className="po-avatar" style={{ background: isMe ? 'var(--ink)' : 'var(--paper-2)', color: isMe ? 'var(--acid)' : 'var(--ink)' }}>
-                    {initials}
+                  <div className="po-avatar" style={{ background: isMe ? 'var(--ink)' : 'var(--paper-2)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {entry.avatar ? <img src={avatarUrl(entry.avatar)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} /> : entry.playerName.slice(0, 2).toUpperCase()}
                   </div>
                   <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: isMe ? 'var(--ink)' : 'var(--black)' }}>
                     {entry.playerName}

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { onStdbConnected } from '@/lib/spacetimedb';
 import type { DbConnection } from '@/module_bindings';
 import BottomNav from '@/components/BottomNav';
+import { AVATARS, avatarUrl } from '@/hooks/useGameSocket';
 
 type GlobalLeaderboard = InstanceType<typeof DbConnection>['db']['globalLeaderboard'] extends { iter(): Iterable<infer R> } ? R : never;
+type UserProfile = InstanceType<typeof DbConnection>['db']['userProfile'] extends { iter(): Iterable<infer R> } ? R : never;
 
 function formatDate(updatedAtUs: bigint): string {
   const ms = Number(updatedAtUs / 1000n);
@@ -14,28 +16,43 @@ function formatDate(updatedAtUs: bigint): string {
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<GlobalLeaderboard[]>([]);
+  const [profiles, setProfiles] = useState<Map<string, UserProfile>>(new Map());
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
     onStdbConnected((conn) => {
-      const rebuild = () => {
+      const rebuildEntries = () => {
         const rows = [...conn.db.globalLeaderboard.iter()];
         rows.sort((a, b) => b.wins - a.wins || b.bestScore - a.bestScore);
         setEntries(rows);
+      };
+      const rebuildProfiles = () => {
+        const map = new Map<string, UserProfile>();
+        for (const p of conn.db.userProfile.iter()) map.set(p.identity.toHexString(), p);
+        setProfiles(map);
       };
 
       conn.subscriptionBuilder()
         .onApplied(() => {
           setConnected(true);
-          rebuild();
+          rebuildEntries();
+          rebuildProfiles();
         })
-        .subscribe(['SELECT * FROM global_leaderboard']);
+        .subscribe(['SELECT * FROM global_leaderboard', 'SELECT * FROM user_profile']);
 
-      conn.db.globalLeaderboard.onInsert(() => rebuild());
-      conn.db.globalLeaderboard.onUpdate(() => rebuild());
-      conn.db.globalLeaderboard.onDelete(() => rebuild());
+      conn.db.globalLeaderboard.onInsert(() => rebuildEntries());
+      conn.db.globalLeaderboard.onUpdate(() => rebuildEntries());
+      conn.db.globalLeaderboard.onDelete(() => rebuildEntries());
+      conn.db.userProfile.onInsert(() => rebuildProfiles());
+      conn.db.userProfile.onUpdate(() => rebuildProfiles());
     });
   }, []);
+
+  const avatarForEntry = (entry: GlobalLeaderboard) => {
+    const profile = profiles.get(entry.identity.toHexString());
+    if (profile) return avatarUrl(AVATARS[profile.avatarId % AVATARS.length]);
+    return null;
+  };
 
   return (
     <div className="page-wrapper">
@@ -85,7 +102,9 @@ export default function LeaderboardPage() {
                         {String(rank).padStart(2, '0')}
                       </span>
                       <div className="po-avatar" style={{ background: rank === 1 ? 'var(--acid)' : 'rgba(255,255,255,0.1)', color: rank === 1 ? 'var(--ink)' : 'var(--paper)', borderColor: rank === 1 ? 'var(--acid)' : 'rgba(255,255,255,0.2)' }}>
-                        {entry.playerName.slice(0, 2).toUpperCase()}
+                        {avatarForEntry(entry)
+                          ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={avatarForEntry(entry)!} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
+                          : entry.playerName.slice(0, 2).toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--paper)' }}>
@@ -119,7 +138,9 @@ export default function LeaderboardPage() {
                       #{rank}
                     </span>
                     <div className="po-avatar">
-                      {entry.playerName.slice(0, 2).toUpperCase()}
+                      {avatarForEntry(entry)
+                        ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={avatarForEntry(entry)!} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
+                        : entry.playerName.slice(0, 2).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--black)' }}>

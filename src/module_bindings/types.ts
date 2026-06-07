@@ -40,6 +40,7 @@ export type GameTip = __Infer<typeof GameTip>;
 
 export const GlobalLeaderboard = __t.object("GlobalLeaderboard", {
   playerName: __t.string(),
+  identity: __t.identity(),
   wins: __t.u32(),
   gamesPlayed: __t.u32(),
   bestScore: __t.u32(),

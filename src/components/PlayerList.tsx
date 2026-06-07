@@ -1,6 +1,6 @@
 'use client';
 
-import { Player } from '@/hooks/useGameSocket';
+import { Player, avatarUrl } from '@/hooks/useGameSocket';
 
 interface PlayerListProps {
   players: Player[];
@@ -25,7 +25,6 @@ export default function PlayerList({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {players.map((player, i) => {
         const isMe = player.id === myPlayerId;
-        const initials = player.name.slice(0, 2).toUpperCase();
         return (
           <div
             key={player.id}
@@ -33,8 +32,9 @@ export default function PlayerList({
             style={{ animationDelay: `${i * 0.08}s`, opacity: 0, animationFillMode: 'forwards' }}
           >
             {/* Avatar */}
-            <div className="po-avatar" style={{ color: 'var(--ink)' }}>
-              {initials}
+            <div className="po-avatar" style={{ background: 'var(--paper-2)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarUrl(player.avatar)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
             </div>
 
             {/* Name + badges */}

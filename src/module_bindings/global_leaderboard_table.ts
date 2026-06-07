@@ -12,6 +12,7 @@ import {
 
 export default __t.row({
   playerName: __t.string().primaryKey().name("player_name"),
+  identity: __t.identity(),
   wins: __t.u32(),
   gamesPlayed: __t.u32().name("games_played"),
   bestScore: __t.u32().name("best_score"),
