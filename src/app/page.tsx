@@ -7,7 +7,7 @@ import { onStdbConnected } from '@/lib/spacetimedb';
 import { useProfile } from '@/hooks/useProfile';
 import { ProfileModal } from '@/components/ProfileModal';
 import BottomNav from '@/components/BottomNav';
-import { AVATARS } from '@/hooks/useGameSocket';
+import { AVATARS, avatarUrl } from '@/hooks/useGameSocket';
 import type { DbConnection } from '@/module_bindings';
 
 function LogoDisplay() {
@@ -220,10 +220,14 @@ export default function LandingPage() {
                 width: 72, height: 72, borderRadius: 'var(--r)',
                 background: 'var(--paper-2)', border: 'var(--bd)',
                 boxShadow: 'var(--sh)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36,
+                overflow: 'hidden',
               }}>
-                {AVATARS[profile.avatarId % AVATARS.length] ?? '🎨'}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl(AVATARS[profile.avatarId % AVATARS.length] ?? AVATARS[0])}
+                  alt="avatar"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                />
               </div>
             </div>
             <span style={{

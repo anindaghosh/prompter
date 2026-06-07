@@ -22,6 +22,7 @@ import {
   PowerupId,
   POWERUP_DEFS,
   AVATARS,
+  avatarUrl,
 } from '@/hooks/useGameSocket';
 
 
@@ -105,7 +106,7 @@ export default function GameRoomPage() {
       name: pl.name,
       isReady: pl.isReady,
       isHost: pl.isHost,
-      avatar: AVATARS[pl.avatarIndex % AVATARS.length] ?? '🎨',
+      avatar: AVATARS[pl.avatarIndex % AVATARS.length] ?? AVATARS[0],
     }));
 
     const currentRound = room.currentRound;
@@ -763,7 +764,8 @@ function PowerupTray({ powerup, powerupUsed, def, needsTarget, isSelectingTarget
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {opponents.map(p => (
                   <button key={p.id} onClick={() => onTargetSelect(p.id)} className="po-row" style={{ cursor: 'pointer', border: 'var(--bd)', background: 'var(--white)' }}>
-                    <span style={{ fontSize: 18 }}>{p.avatar}</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatarUrl(p.avatar)} alt="" style={{ width: 28, height: 28, display: 'block', borderRadius: 4 }} />
                     <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: 'var(--black)' }}>{p.name}</span>
                   </button>
                 ))}

@@ -186,6 +186,7 @@ const globalLeaderboard = table(
   { name: 'global_leaderboard', public: true },
   {
     player_name:   t.string().primaryKey(),
+    identity:      t.identity(),
     wins:          t.u32(),
     games_played:  t.u32(),
     best_score:    t.u32(), // tiebreaker
@@ -945,6 +946,7 @@ export const nextRound = spacetimedb.reducer(
         if (!existing) {
           ctx.db.globalLeaderboard.insert({
             player_name:   pl.name,
+            identity:      pl.identity,
             wins:          isWinner ? 1 : 0,
             games_played:  1,
             best_score:    pl.total_score,
@@ -953,6 +955,7 @@ export const nextRound = spacetimedb.reducer(
         } else {
           ctx.db.globalLeaderboard.player_name.update({
             ...existing,
+            identity:      pl.identity,
             wins:          existing.wins + (isWinner ? 1 : 0),
             games_played:  existing.games_played + 1,
             best_score:    Math.max(existing.best_score, pl.total_score),

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { PlayerResult, ReferenceImage } from '@/hooks/useGameSocket';
+import { PlayerResult, ReferenceImage, avatarUrl } from '@/hooks/useGameSocket';
 
 interface ResultsRevealProps {
   results: PlayerResult[];
@@ -52,7 +52,6 @@ function AvatarNav({ results, activeIndex, onSelect }: {
     <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
       {results.map((r, i) => {
         const active = i === activeIndex;
-        const initials = r.playerName.slice(0, 2).toUpperCase();
         return (
           <button
             key={r.playerId}
@@ -64,17 +63,19 @@ function AvatarNav({ results, activeIndex, onSelect }: {
               height: 42,
               cursor: 'pointer',
               background: active ? 'var(--acid)' : 'var(--paper-2)',
-              color: active ? 'var(--ink)' : 'var(--black)',
               opacity: active ? 1 : 0.5,
               boxShadow: active ? 'var(--sh)' : 'none',
               border: active ? 'var(--bd)' : 'var(--bd1)',
               transform: active ? 'translate(-1px,-1px)' : 'none',
               transition: 'all 150ms ease',
               padding: 0,
-              fontSize: 15,
             }}
           >
-            {initials}
+            {r.avatar
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={avatarUrl(r.avatar)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
+              : r.playerName.slice(0, 2).toUpperCase()
+            }
           </button>
         );
       })}
@@ -115,10 +116,13 @@ function PlayerResultCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div className="po-avatar" style={{
           background: isMe ? 'var(--ink)' : isWinner ? 'rgba(255,255,255,0.1)' : 'var(--paper-2)',
-          color: isMe ? 'var(--acid)' : isWinner ? 'var(--acid)' : 'var(--ink)',
           width: 38, height: 38,
         }}>
-          {result.playerName.slice(0, 2).toUpperCase()}
+          {result.avatar
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={avatarUrl(result.avatar)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
+            : result.playerName.slice(0, 2).toUpperCase()
+          }
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: cardTextColor }}>
@@ -164,9 +168,12 @@ function PlayerResultCard({
         <span style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
-          fontSize: 20,
+          fontSize: 16,
           letterSpacing: '-0.02em',
-          color: result.similarityScore >= 70 ? 'var(--acid)' : result.similarityScore >= 40 ? 'var(--warn)' : 'var(--danger)',
+          background: result.similarityScore >= 70 ? 'var(--acid)' : result.similarityScore >= 40 ? 'var(--warn)' : 'var(--danger)',
+          color: 'var(--ink)',
+          padding: '2px 8px',
+          borderRadius: 4,
         }}>
           {result.similarityScore}%
         </span>

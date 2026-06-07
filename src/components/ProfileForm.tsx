@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AVATARS } from '@/hooks/useGameSocket';
+import { AVATARS, avatarUrl } from '@/hooks/useGameSocket';
 
 interface ProfileFormProps {
   initialName?: string;
@@ -68,15 +68,15 @@ export function ProfileForm({
 
       <div className="po-kicker" style={{ marginBottom: 8 }}>Avatar</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
-        {AVATARS.map((emoji, id) => (
+        {AVATARS.map((seed, id) => (
           <button
             key={id}
             type="button"
             onClick={() => { setAvatarId(id); setDone(false); }}
             aria-label={`Avatar ${id + 1}`}
             style={{
-              fontSize: 24,
-              padding: '8px 0',
+              padding: 4,
+              aspectRatio: '1',
               borderRadius: 'var(--r)',
               cursor: 'pointer',
               background: avatarId === id ? 'var(--acid)' : 'var(--paper-2)',
@@ -84,9 +84,11 @@ export function ProfileForm({
               boxShadow: avatarId === id ? 'var(--sh-xs)' : 'none',
               transform: avatarId === id ? 'translate(-1px,-1px)' : 'none',
               transition: 'all 120ms ease',
+              overflow: 'hidden',
             }}
           >
-            {emoji}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={avatarUrl(seed)} alt="" style={{ width: '100%', height: '100%', display: 'block' }} />
           </button>
         ))}
       </div>
