@@ -225,21 +225,6 @@ export default function LandingPage() {
               }}>
                 {AVATARS[profile.avatarId % AVATARS.length] ?? '🎨'}
               </div>
-              <button
-                onClick={() => setShowEditProfile(true)}
-                aria-label="Edit profile"
-                style={{
-                  position: 'absolute', top: -6, right: -6,
-                  width: 26, height: 26, borderRadius: 'var(--r-sm)',
-                  background: 'var(--white)', border: 'var(--bd)',
-                  boxShadow: 'var(--sh-xs)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', fontSize: 13, padding: 0,
-                  color: 'var(--black)',
-                }}
-              >
-                ⚙
-              </button>
             </div>
             <span style={{
               marginTop: 10, fontFamily: 'var(--font-display)',
