@@ -9,27 +9,18 @@ interface StatCardProps {
 export default function StatCard({ label, value, accent }: StatCardProps) {
   return (
     <div
-      className="card"
-      style={{
-        background: accent ? 'var(--gold)' : 'var(--white)',
-        padding: '14px 16px',
-      }}
+      className={accent ? 'po-card card-acid' : 'po-card'}
+      style={{ padding: '14px 16px' }}
     >
-      <div style={{
-        fontFamily: 'var(--font-body)',
-        fontSize: 11,
-        fontWeight: 600,
-        opacity: 0.6,
-        textTransform: 'uppercase',
-        letterSpacing: '0.06em',
-        marginBottom: 4,
-      }}>
+      <div className="po-kicker" style={{ color: accent ? 'var(--ink)' : 'var(--black)', opacity: accent ? 0.7 : 0.55, marginBottom: 6 }}>
         {label}
       </div>
       <div style={{
         fontFamily: 'var(--font-display)',
-        fontWeight: 800,
+        fontWeight: 900,
         fontSize: 22,
+        letterSpacing: '-0.02em',
+        color: accent ? 'var(--ink)' : 'var(--black)',
       }}>
         {value}
       </div>

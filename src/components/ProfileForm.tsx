@@ -9,7 +9,6 @@ interface ProfileFormProps {
   submitLabel: string;
   submittingLabel: string;
   onSubmit: (displayName: string, avatarId: number) => Promise<void>;
-  /** Shown after a successful submit (e.g. "Saved!"). Cleared on next edit. */
   successMessage?: string;
 }
 
@@ -50,9 +49,9 @@ export function ProfileForm({
 
   return (
     <div>
-      <label style={labelStyle}>Display Name</label>
+      <div className="po-kicker" style={{ marginBottom: 8 }}>Display Name</div>
       <input
-        className="input"
+        className="po-input"
         type="text"
         placeholder="3–20 characters"
         value={name}
@@ -60,13 +59,14 @@ export function ProfileForm({
         autoFocus
         onChange={e => { setName(e.target.value); setError(null); setDone(false); }}
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
+        style={{ marginBottom: 4 }}
       />
-      <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, opacity: 0.55, margin: '6px 2px 18px' }}>
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.5, margin: '6px 2px 18px', color: 'var(--black)' }}>
         {trimmed.length}/{NAME_MAX}
         {trimmed.length > 0 && !valid ? ' — must be 3–20 characters' : ''}
       </p>
 
-      <label style={labelStyle}>Avatar</label>
+      <div className="po-kicker" style={{ marginBottom: 8 }}>Avatar</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
         {AVATARS.map((emoji, id) => (
           <button
@@ -75,13 +75,14 @@ export function ProfileForm({
             onClick={() => { setAvatarId(id); setDone(false); }}
             aria-label={`Avatar ${id + 1}`}
             style={{
-              fontSize: 26,
+              fontSize: 24,
               padding: '8px 0',
-              borderRadius: 'var(--radius-md)',
+              borderRadius: 'var(--r)',
               cursor: 'pointer',
-              background: avatarId === id ? 'var(--white)' : 'var(--track)',
-              border: avatarId === id ? 'var(--border)' : '2px solid transparent',
-              boxShadow: avatarId === id ? 'var(--shadow-sm)' : 'none',
+              background: avatarId === id ? 'var(--acid)' : 'var(--paper-2)',
+              border: avatarId === id ? 'var(--bd)' : '2px solid transparent',
+              boxShadow: avatarId === id ? 'var(--sh-xs)' : 'none',
+              transform: avatarId === id ? 'translate(-1px,-1px)' : 'none',
               transition: 'all 120ms ease',
             }}
           >
@@ -91,29 +92,19 @@ export function ProfileForm({
       </div>
 
       {error && (
-        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'var(--coral)', border: 'var(--border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)' }}>
+        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'var(--danger)', border: 'var(--bd)', borderRadius: 'var(--r)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)' }}>
           {error}
         </div>
       )}
       {done && successMessage && !error && (
-        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'var(--track)', border: 'var(--border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14 }}>
+        <div style={{ marginBottom: 14, padding: '10px 14px', background: 'var(--acid)', border: 'var(--bd)', borderRadius: 'var(--r)', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>
           {successMessage}
         </div>
       )}
 
-      <button className="btn btn-primary" onClick={handleSubmit} disabled={!valid || submitting} style={{ width: '100%' }}>
-        {submitting ? submittingLabel : submitLabel}
+      <button className="btn btn-dark" onClick={handleSubmit} disabled={!valid || submitting} style={{ width: '100%' }}>
+        {submitting ? submittingLabel : <span>{submitLabel} <span style={{ fontFamily: 'var(--font-mono)' }}>▸</span></span>}
       </button>
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontFamily: 'var(--font-body)',
-  fontWeight: 700,
-  fontSize: 13,
-  marginBottom: 8,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-};

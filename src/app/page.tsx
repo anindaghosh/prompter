@@ -1,36 +1,20 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from 'react-oidc-context';
 import { onStdbConnected } from '@/lib/spacetimedb';
 import { useProfile } from '@/hooks/useProfile';
 import { ProfileModal } from '@/components/ProfileModal';
+import BottomNav from '@/components/BottomNav';
 import { AVATARS } from '@/hooks/useGameSocket';
 import type { DbConnection } from '@/module_bindings';
 
-const LOGO_URL = process.env.NEXT_PUBLIC_LOGO_URL || '/logo.svg';
-
 function LogoDisplay() {
-  const [imgError, setImgError] = useState(false);
-  if (imgError) {
-    return (
-      <>
-        <div style={{ fontSize: 56, marginBottom: 8, lineHeight: 1 }}>🎨</div>
-        <h1 style={{
-          fontFamily: 'var(--font-display)', fontWeight: 900,
-          fontSize: 'clamp(32px, 8vw, 44px)', letterSpacing: '-0.03em',
-          color: 'var(--black)', lineHeight: 1.05, marginBottom: 12,
-        }}>PromptOff</h1>
-      </>
-    );
-  }
   return (
-    <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
-      <Image src={LOGO_URL} alt="Logo" width={560} height={168}
-        style={{ objectFit: 'contain', maxHeight: 168 }}
-        onError={() => setImgError(true)} unoptimized />
+    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.svg" alt="PromptOff" style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block' }} />
     </div>
   );
 }
@@ -161,14 +145,14 @@ export default function LandingPage() {
         <SparkleField />
         <div className="page-content" style={{ paddingTop: 80, paddingBottom: 48, textAlign: 'center' }}>
           <LogoDisplay />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--black)', opacity: 0.6, maxWidth: 300, margin: '0 auto 32px', lineHeight: 1.5 }}>
-            Race to recreate images using AI prompts. Sign in to create your profile and play.
+          <p className="po-mono" style={{ fontSize: 13, color: 'var(--black)', opacity: 0.55, maxWidth: 300, margin: '8px auto 32px', lineHeight: 1.5, letterSpacing: '0.02em' }}>
+            &gt;_ race to recreate the image. every token you spend costs you.
           </p>
           <button className="btn btn-primary" onClick={() => auth.signinRedirect()}>
-            Sign In ▶
+            Sign In <span style={{ fontFamily: 'var(--font-mono)', marginLeft: 4 }}>▸</span>
           </button>
           {auth.error && (
-            <p style={{ marginTop: 16, fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--coral)' }}>
+            <p style={{ marginTop: 16, fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--danger)' }}>
               {auth.error.message}
             </p>
           )}
@@ -184,24 +168,28 @@ export default function LandingPage() {
     <div className="page-wrapper" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
       <SparkleField />
 
-      <button
-        onClick={() => auth.signoutRedirect()}
-        aria-label="Sign out"
-        title="Sign out"
-        style={{
-          position: 'fixed', top: 16, right: 16, zIndex: 100,
-          width: 36, height: 36, borderRadius: '50%',
-          background: 'var(--white)', border: 'var(--border)',
-          boxShadow: 'var(--shadow-sm)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', fontSize: 16, padding: 0,
-          transition: 'background 120ms ease',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--track)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'var(--white)')}
-      >
-        ⏻
-      </button>
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
+        <button
+          onClick={() => auth.signoutRedirect()}
+          aria-label="Sign out"
+          title="Sign out"
+          style={{
+            width: 36, height: 36, borderRadius: 'var(--r)',
+            background: 'var(--white)', border: 'var(--bd)',
+            boxShadow: 'var(--sh-xs)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', fontSize: 15, padding: 0,
+            color: 'var(--black)', fontFamily: 'var(--font-mono)',
+            transition: 'transform 80ms ease, box-shadow 80ms ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-1px,-1px)'; e.currentTarget.style.boxShadow = 'var(--sh-sm)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--sh-xs)'; }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = 'none'; }}
+          onMouseUp={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = 'var(--sh-xs)'; }}
+        >
+          ⏻
+        </button>
+      </div>
 
       {ready && !profile && <ProfileModal onCreate={createProfile} />}
       {showEditProfile && profile && (
@@ -213,12 +201,12 @@ export default function LandingPage() {
         />
       )}
 
-      <div className="page-content" style={{ paddingTop: 60, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div className="page-content" style={{ paddingTop: 60, paddingBottom: 96, display: 'flex', flexDirection: 'column', gap: 0 }}>
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: 24 }} className="animate-slide-up">
           <LogoDisplay />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--black)', opacity: 0.6, maxWidth: 280, margin: '0 auto', lineHeight: 1.5 }}>
-            Race to recreate images using AI prompts. Every token counts.
+          <p className="po-mono" style={{ fontSize: 13, color: 'var(--black)', opacity: 0.55, maxWidth: 280, margin: '8px auto 0', lineHeight: 1.5, letterSpacing: '0.02em' }}>
+            &gt;_ race to recreate the image. every token you spend costs you.
           </p>
         </div>
 
@@ -227,11 +215,11 @@ export default function LandingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }} className="animate-slide-up stagger-1">
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <div style={{
-                width: 76, height: 76, borderRadius: '50%',
-                background: 'var(--white)', border: 'var(--border)',
-                boxShadow: 'var(--shadow-sm)',
+                width: 72, height: 72, borderRadius: 'var(--r)',
+                background: 'var(--paper-2)', border: 'var(--bd)',
+                boxShadow: 'var(--sh)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 38,
+                fontSize: 36,
               }}>
                 {AVATARS[profile.avatarId % AVATARS.length] ?? '🎨'}
               </div>
@@ -239,23 +227,22 @@ export default function LandingPage() {
                 onClick={() => setShowEditProfile(true)}
                 aria-label="Edit profile"
                 style={{
-                  position: 'absolute', top: -4, right: -4,
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: 'var(--white)', border: 'var(--border)',
-                  boxShadow: 'var(--shadow-sm)',
+                  position: 'absolute', top: -6, right: -6,
+                  width: 26, height: 26, borderRadius: 'var(--r-sm)',
+                  background: 'var(--white)', border: 'var(--bd)',
+                  boxShadow: 'var(--sh-xs)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer', fontSize: 13, padding: 0,
-                  transition: 'background 120ms ease',
+                  color: 'var(--black)',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--track)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'var(--white)')}
               >
-                ⚙️
+                ⚙
               </button>
             </div>
             <span style={{
-              marginTop: 10, fontFamily: 'var(--font-body)',
-              fontWeight: 700, fontSize: 15,
+              marginTop: 10, fontFamily: 'var(--font-display)',
+              fontWeight: 800, fontSize: 16, letterSpacing: '-0.01em',
+              color: 'var(--black)',
             }}>
               {profile.displayName}
             </span>
@@ -267,27 +254,22 @@ export default function LandingPage() {
         ) : (
           <>
             {/* Tab switcher */}
-            <div style={{ display: 'flex', background: 'var(--track)', borderRadius: 'var(--radius-pill)', padding: 4, marginBottom: 20, border: 'var(--border)' }} className="animate-slide-up stagger-2">
+            <div style={{ display: 'flex', background: 'var(--paper-2)', borderRadius: 'var(--r)', padding: 4, marginBottom: 20, border: 'var(--bd)' }} className="animate-slide-up stagger-2">
               <TabButton active={tab === 'create'} onClick={() => setTab('create')}>Create Room</TabButton>
               <TabButton active={tab === 'join'} onClick={() => setTab('join')}>Join Room</TabButton>
             </div>
 
             {tab === 'create' && (
               <div className="animate-slide-up" key="create">
-                <div className="card" style={{ marginBottom: 16, textAlign: 'center' }}>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, marginBottom: 8 }}>A 6-character room code will be generated.</p>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7 }}>Share it with friends to play together!</p>
+                <div className="po-card" style={{ marginBottom: 16 }}>
+                  <div className="po-kicker" style={{ marginBottom: 8 }}>Room Setup</div>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, lineHeight: 1.5 }}>A 6-character room code will be generated. Share it with friends to play together.</p>
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{
-                    display: 'block', fontFamily: 'var(--font-body)', fontWeight: 700,
-                    fontSize: 13, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em',
-                  }}>
-                    Rounds
-                  </label>
+                  <div className="po-kicker" style={{ marginBottom: 10 }}>Rounds</div>
                   <div style={{
-                    display: 'flex', background: 'var(--track)',
-                    borderRadius: 'var(--radius-pill)', padding: 4, border: 'var(--border)',
+                    display: 'flex', background: 'var(--paper-2)',
+                    borderRadius: 'var(--r)', padding: 4, border: 'var(--bd)',
                   }}>
                     {([1, 3, 5] as const).map(n => (
                       <button
@@ -295,13 +277,14 @@ export default function LandingPage() {
                         onClick={() => setRoundCount(n)}
                         style={{
                           flex: 1, padding: '10px 0',
-                          border: roundCount === n ? 'var(--border)' : '2px solid transparent',
-                          borderRadius: 'var(--radius-pill)',
-                          background: roundCount === n ? 'var(--white)' : 'transparent',
-                          fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+                          border: roundCount === n ? 'var(--bd)' : '2px solid transparent',
+                          borderRadius: 'var(--r)',
+                          background: roundCount === n ? 'var(--acid)' : 'transparent',
+                          fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 16,
                           cursor: 'pointer',
-                          boxShadow: roundCount === n ? 'var(--shadow-sm)' : 'none',
-                          transition: 'all 120ms ease', color: 'var(--black)',
+                          boxShadow: roundCount === n ? 'var(--sh-xs)' : 'none',
+                          transition: 'all 120ms ease',
+                          color: roundCount === n ? 'var(--ink)' : 'var(--black)',
                         }}
                       >
                         {n}
@@ -309,56 +292,61 @@ export default function LandingPage() {
                     ))}
                   </div>
                 </div>
-                <button className="btn btn-primary" onClick={handleCreateRoom} disabled={loading !== null} onKeyDown={handleKeyDown}>
-                  {loading === 'create' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Creating...</span> : <>Create Room ▶</>}
+                <button className="btn btn-dark" onClick={handleCreateRoom} disabled={loading !== null} onKeyDown={handleKeyDown}>
+                  {loading === 'create'
+                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Creating...</span>
+                    : <span>Create Room <span style={{ fontFamily: 'var(--font-mono)' }}>▸</span></span>}
                 </button>
               </div>
             )}
 
             {tab === 'join' && (
               <div className="animate-slide-up" key="join">
-                <input className="input" type="text" placeholder="Enter room code (e.g. ABC123)"
+                <input className="po-input" type="text" placeholder="Enter room code (e.g. ABC123)"
                   value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())}
                   onKeyDown={handleKeyDown} maxLength={6}
-                  style={{ marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }} />
-                <button className="btn btn-primary" onClick={handleJoinRoom} disabled={loading !== null}>
-                  {loading === 'join' ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Joining...</span> : <>Join Room ▶</>}
+                  style={{ marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--font-mono)', fontWeight: 700 }} />
+                <button className="btn btn-dark" onClick={handleJoinRoom} disabled={loading !== null}>
+                  {loading === 'join'
+                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner /> Joining...</span>
+                    : <span>Join Room <span style={{ fontFamily: 'var(--font-mono)' }}>▸</span></span>}
                 </button>
               </div>
             )}
 
             {error && (
-              <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--coral)', border: 'var(--border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--danger)', border: 'var(--bd)', borderRadius: 'var(--r)', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 14, color: 'var(--white)', boxShadow: 'var(--sh-xs)' }}>
                 {error}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 24, width: '100%' }}>
-              <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0 }} onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, width: '100%' }}>
+              <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0, fontSize: 13 }} onClick={() => router.push('/leaderboard')}>▦ Leaderboard</button>
               {connected && (
-                <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0 }} onClick={() => router.push('/stats')}>📊 My Stats</button>
+                <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0, fontSize: 13 }} onClick={() => router.push('/stats')}>◆ My Stats</button>
               )}
             </div>
           </>
         )}
 
         <div style={{ marginTop: 28 }} className="animate-slide-up stagger-4">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, marginBottom: 16, letterSpacing: '-0.01em' }}>How to Play</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="po-kicker" style={{ marginBottom: 12 }}>How to Play</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { icon: '👁️', text: 'See a reference image you need to recreate' },
-              { icon: '✍️', text: 'Write an AI prompt within your token budget' },
-              { icon: '⚡', text: 'Submit — an AI generates your image' },
-              { icon: '🏆', text: 'Score points for similarity, efficiency & speed' },
-            ].map((step, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--white)', border: 'var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
-                <span style={{ fontSize: 20 }}>{step.icon}</span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14 }}>{step.text}</span>
+              { n: '01', text: 'See a reference image you need to recreate' },
+              { n: '02', text: 'Write an AI prompt within your token budget' },
+              { n: '03', text: 'Submit — AI generates your image' },
+              { n: '04', text: 'Score points for similarity, efficiency & speed' },
+            ].map((step) => (
+              <div key={step.n} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--white)', border: 'var(--bd)', borderRadius: 'var(--r)', boxShadow: 'var(--sh-xs)' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12, color: 'var(--acid)', background: 'var(--ink)', padding: '2px 6px', borderRadius: 'var(--r-xs)', flexShrink: 0 }}>{step.n}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--black)' }}>{step.text}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }
@@ -373,7 +361,17 @@ function Splash({ text }: { text: string }) {
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} style={{ flex: 1, padding: '10px 0', border: active ? 'var(--border)' : '2px solid transparent', borderRadius: 'var(--radius-pill)', background: active ? 'var(--white)' : 'transparent', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: active ? 'var(--shadow-sm)' : 'none', transition: 'all 120ms ease', color: 'var(--black)' }}>
+    <button onClick={onClick} style={{
+      flex: 1, padding: '10px 0',
+      border: active ? 'var(--bd)' : '2px solid transparent',
+      borderRadius: 'var(--r)',
+      background: active ? 'var(--ink)' : 'transparent',
+      fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14,
+      cursor: 'pointer',
+      boxShadow: active ? 'var(--sh-xs)' : 'none',
+      transition: 'all 120ms ease',
+      color: active ? 'var(--acid)' : 'var(--black)',
+    }}>
       {children}
     </button>
   );
@@ -385,24 +383,33 @@ function Spinner() {
 
 function SparkleField() {
   const sparkles = [
-    { top: '8%', left: '6%', size: 20, delay: 0 },
-    { top: '15%', right: '8%', size: 14, delay: 0.7 },
-    { top: '35%', left: '3%', size: 10, delay: 1.3 },
-    { top: '28%', right: '5%', size: 18, delay: 0.4 },
-    { bottom: '25%', left: '8%', size: 12, delay: 0.9 },
-    { bottom: '35%', right: '4%', size: 16, delay: 1.6 },
+    { top: '8%',  left: '6%',   size: 20, delay: 0 },
+    { top: '15%', right: '8%',  size: 14, delay: 0.8 },
+    { top: '35%', left: '3%',   size: 10, delay: 1.6 },
+    { top: '28%', right: '5%',  size: 18, delay: 0.4 },
+    { bottom: '25%', left: '8%',  size: 12, delay: 1.2 },
+    { bottom: '35%', right: '4%', size: 16, delay: 2.0 },
   ];
   return (
     <>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes sparkle-float {
-          0%, 100% { opacity: 0.5; transform: scale(0.9) rotate(0deg); }
-          50% { opacity: 1; transform: scale(1.15) rotate(15deg); }
-        }
-      `}</style>
       {sparkles.map((s, i) => (
-        <span key={i} style={{ position: 'fixed', ...(s.top ? { top: s.top } : {}), ...(s as any).bottom ? { bottom: (s as any).bottom } : {}, ...(s.left ? { left: s.left } : {}), ...((s as any).right ? { right: (s as any).right } : {}), fontSize: s.size, color: 'var(--gold)', animation: `sparkle-float 2.5s ease-in-out ${s.delay}s infinite`, userSelect: 'none', pointerEvents: 'none' }}>✦</span>
+        <span
+          key={i}
+          className="po-spark"
+          style={{
+            position: 'fixed',
+            ...(s.top    ? { top: s.top }       : {}),
+            ...((s as Record<string, unknown>).bottom ? { bottom: (s as Record<string, unknown>).bottom as string } : {}),
+            ...(s.left   ? { left: s.left }     : {}),
+            ...((s as Record<string, unknown>).right ? { right: (s as Record<string, unknown>).right as string } : {}),
+            fontSize: s.size,
+            animationDelay: `${s.delay}s`,
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}
+        >
+          ✦
+        </span>
       ))}
     </>
   );

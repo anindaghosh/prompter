@@ -22,18 +22,19 @@ export default function PlayerList({
   const me = players.find(p => p.id === myPlayerId);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {players.map((player, i) => {
         const isMe = player.id === myPlayerId;
+        const initials = player.name.slice(0, 2).toUpperCase();
         return (
           <div
             key={player.id}
-            className={`player-row ${isMe ? 'is-you' : ''} animate-slide-up`}
+            className={`po-row${isMe ? ' you' : ''} animate-slide-up`}
             style={{ animationDelay: `${i * 0.08}s`, opacity: 0, animationFillMode: 'forwards' }}
           >
             {/* Avatar */}
-            <div className="avatar">
-              {player.avatar}
+            <div className="po-avatar" style={{ color: 'var(--ink)' }}>
+              {initials}
             </div>
 
             {/* Name + badges */}
@@ -46,14 +47,15 @@ export default function PlayerList({
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  color: isMe ? 'var(--ink)' : 'var(--black)',
                 }}>
                   {player.name}
                 </span>
                 {isMe && (
-                  <span className="badge badge-sky" style={{ fontSize: 10 }}>You</span>
+                  <span className="po-chip po-chip--ink" style={{ fontSize: 10 }}>You</span>
                 )}
                 {player.isHost && (
-                  <span style={{ fontSize: 14 }} title="Host">👑</span>
+                  <span className="po-chip" style={{ fontSize: 10 }}>Host</span>
                 )}
               </div>
             </div>
@@ -62,20 +64,15 @@ export default function PlayerList({
             <div>
               {isMe ? (
                 <button
-                  className={`btn btn-sm btn-auto ${me?.isReady ? 'btn-primary' : 'btn-coral'}`}
+                  className={`btn btn-sm btn-auto ${me?.isReady ? 'btn-dark' : 'btn-ghost'}`}
                   onClick={() => onToggleReady(!me?.isReady)}
+                  style={{ fontSize: 12 }}
                 >
                   {me?.isReady ? '✓ Ready' : 'Ready Up'}
                 </button>
               ) : (
-                <span style={{
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: player.isReady ? 'var(--teal)' : 'var(--black)',
-                  opacity: player.isReady ? 1 : 0.4,
-                }}>
-                  {player.isReady ? '✓ Ready' : 'Waiting...'}
+                <span className={`po-chip ${player.isReady ? 'po-chip--acid' : ''}`}>
+                  {player.isReady ? '✓ Ready' : 'Waiting'}
                 </span>
               )}
             </div>
@@ -88,14 +85,15 @@ export default function PlayerList({
         <div style={{
           textAlign: 'center',
           padding: '16px',
-          fontFamily: 'var(--font-body)',
-          fontSize: 13,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 12,
           opacity: 0.5,
+          color: 'var(--black)',
           border: '1.5px dashed var(--black)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--r)',
           marginTop: 4,
         }}>
-          Waiting for more players to join...
+          waiting for more players to join...
         </div>
       )}
 
@@ -108,8 +106,8 @@ export default function PlayerList({
           style={{ marginTop: 8 }}
         >
           {!canStart
-            ? `Waiting for players (${players.filter(p => p.isReady).length}/${players.length} ready)`
-            : 'Start Game ▶'
+            ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>Waiting ({players.filter(p => p.isReady).length}/{players.length} ready)</span>
+            : <span>Start Game <span style={{ fontFamily: 'var(--font-mono)' }}>▸</span></span>
           }
         </button>
       )}
