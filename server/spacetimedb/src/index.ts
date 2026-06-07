@@ -797,11 +797,13 @@ export const submitScore = spacetimedb.reducer(
       speed_score:       scored.speedScore,
     });
 
-    // Check if all submitting players have results
+    // Check if all submitting players have results (exclude auto-inserted non-submitter rows)
     const submitters = [...ctx.db.submission.by_room_round.filter([roomCode, round])];
     const results = [...ctx.db.roundResult.by_room_round.filter([roomCode, round])];
+    const submitterHexSet = new Set(submitters.map((s: any) => s.identity.toHexString()));
+    const scoredCount = results.filter((r: any) => submitterHexSet.has(r.identity.toHexString())).length;
 
-    if (results.length >= submitters.length) {
+    if (scoredCount >= submitters.length) {
       // Assign placements
       const sorted = [...results].sort((a, b) => b.round_score - a.round_score);
       for (let i = 0; i < sorted.length; i++) {
@@ -1110,6 +1112,16 @@ export const handleRoundEnd = spacetimedb.reducer(
           sim_score: 0, eff_score: 0, speed_score: 0,
         });
       }
+    }
+
+    if (subs.length === 0) {
+      const allResults = [...ctx.db.roundResult.by_room_round.filter([timer.room_code, timer.round])];
+      const sorted = [...allResults].sort((a, b) => b.round_score - a.round_score);
+      for (let i = 0; i < sorted.length; i++) {
+        ctx.db.roundResult.id.update({ ...sorted[i], placement: i + 1 });
+      }
+      ctx.db.room.code.update({ ...rm, phase: 'reveal' });
+      return;
     }
 
     ctx.db.room.code.update({ ...rm, phase: 'scoring' });

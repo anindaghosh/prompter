@@ -606,6 +606,6 @@ app.prepare().then(() => {
   }
 
   httpServer.listen(port, () => {
-    console.log(`\n🎮 Promptinary running at http://${hostname}:${port}\n`);
+    console.log(`\n🎮 PromptOff running at http://${hostname}:${port}\n`);
   });
 });

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Promptinary** is a competitive multiplayer game where players race to recreate reference images by writing AI image prompts within a token budget. Players are scored on visual similarity (60%), prompt efficiency (25%), and speed (15%).
+**PromptOff** is a competitive multiplayer game where players race to recreate reference images by writing AI image prompts within a token budget. Players are scored on visual similarity (60%), prompt efficiency (25%), and speed (15%).
 
 ## Feature tracking
 

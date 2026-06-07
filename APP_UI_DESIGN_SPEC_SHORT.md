@@ -1,6 +1,6 @@
-# Promptinary — UI Design Specification
+# PromptOff — UI Design Specification
 
-> **For the coding agent:** This document defines the visual design language for Promptinary, inspired by the *Indopendence Quiz Game App* (Dribbble #26108795). Follow this spec for all UI decisions.
+> **For the coding agent:** This document defines the visual design language for PromptOff, inspired by the *Indopendence Quiz Game App* (Dribbble #26108795). Follow this spec for all UI decisions.
 
 ---
 

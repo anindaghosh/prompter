@@ -353,7 +353,6 @@ export default function GameRoomPage() {
     if (gs.phase !== 'scoring') return;
     if (!gs.submittedThisRound) return;
     if (hasSubmittedScoreRef.current) return;
-    if (!generatedImageRef.current) return;
 
     hasSubmittedScoreRef.current = true;
     const conn = connRef.current;
@@ -361,7 +360,7 @@ export default function GameRoomPage() {
     if (!conn || !room) return;
 
     const currentRound = room.currentRound;
-    const imageData = generatedImageRef.current;
+    const imageData = generatedImageRef.current ?? '';
 
     (async () => {
       try {
@@ -521,7 +520,7 @@ export default function GameRoomPage() {
             onSubmit={handlePromptSubmit} onUsePowerup={usePowerup}
             powerupTarget={powerupTarget} onSetPowerupTarget={setPowerupTarget} tips={tips} />
         )}
-        {gs.phase === 'scoring' && <ScoringView tips={tips} />}
+        {gs.phase === 'scoring' && <ScoringView tips={tips} submitted={gs.submittedThisRound} />}
         {gs.phase === 'reveal' && (
           <div>
             <ResultsReveal results={gs.results} referenceImage={gs.referenceImage} myPlayerId={gs.myPlayerId} />
@@ -787,7 +786,7 @@ function SubmittedView({ generatedImage, waitingFor, playerCount, tips }: { gene
   );
 }
 
-function ScoringView({ tips }: { tips: string[] }) {
+function ScoringView({ tips, submitted }: { tips: string[]; submitted: boolean }) {
   const [idx, setIdx] = useState(() => tips.length ? Math.floor(Math.random() * tips.length) : 0);
   useEffect(() => {
     if (tips.length <= 1) return;
@@ -799,14 +798,18 @@ function ScoringView({ tips }: { tips: string[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20, textAlign: 'center' }}>
       <div style={{ fontSize: 52, animation: 'pulse-ring 1.5s ease-in-out infinite' }}>🤖</div>
-      <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24 }}>Scoring...</h2>
-      <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6, maxWidth: 240, lineHeight: 1.5 }}>Gemini AI is analyzing and scoring all submissions</p>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24 }}>{submitted ? 'Scoring...' : 'Round Over'}</h2>
+      <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6, maxWidth: 240, lineHeight: 1.5 }}>
+        {submitted
+          ? 'Gemini AI is analyzing and scoring all submissions'
+          : "You didn't submit a prompt this round — waiting for results"}
+      </p>
       <div style={{ display: 'flex', gap: 6 }}>
         {[0, 1, 2].map(i => (
           <div key={i} style={{ width: 10, height: 10, background: 'var(--teal)', borderRadius: '50%', animation: `pulse-ring 1.2s ease-in-out ${i * 0.2}s infinite` }} />
         ))}
       </div>
-      {tip && (
+      {submitted && tip && (
         <div style={{ maxWidth: 320, padding: '12px 16px', background: 'var(--white)', border: 'var(--border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.5 }}>
           <span style={{ fontWeight: 700, marginRight: 6 }}>💡 Tip:</span>{tip}
         </div>

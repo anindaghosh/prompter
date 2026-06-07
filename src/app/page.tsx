@@ -22,7 +22,7 @@ function LogoDisplay() {
           fontFamily: 'var(--font-display)', fontWeight: 900,
           fontSize: 'clamp(32px, 8vw, 44px)', letterSpacing: '-0.03em',
           color: 'var(--black)', lineHeight: 1.05, marginBottom: 12,
-        }}>Promptinary</h1>
+        }}>PromptOff</h1>
       </>
     );
   }

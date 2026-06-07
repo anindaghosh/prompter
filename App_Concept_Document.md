@@ -1,4 +1,4 @@
-# 🎨 PROMPTINARY
+# 🎨 PromptOff
 ### The AI Image Prompt Challenge Game
 *Hackathon Concept Document — 2025*
 
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Promptinary is a competitive multiplayer game where players race to recreate a given reference image as accurately as possible — but with a critical twist: every character typed costs precious tokens. The game sits at the intersection of AI literacy, creative writing, and competitive gaming, turning prompt engineering into an exciting skill that anyone can learn and master.
+PromptOff is a competitive multiplayer game where players race to recreate a given reference image as accurately as possible — but with a critical twist: every character typed costs precious tokens. The game sits at the intersection of AI literacy, creative writing, and competitive gaming, turning prompt engineering into an exciting skill that anyone can learn and master.
 
 > **The Core Idea:** Show players a stunning reference image. Give them a limited token budget. Let them craft the best prompt they can. Score them on visual similarity, prompt efficiency, and speed. Crown the best prompt engineer.
 
@@ -16,7 +16,7 @@ Promptinary is a competitive multiplayer game where players race to recreate a g
 
 AI image generation has exploded in popularity, but most people treat prompting like a guessing game — adding random words and hoping for the best. There is no engaging, accessible way to learn the craft of writing great prompts. Meanwhile, competitive gaming thrives on tight constraints and skill-based scoring.
 
-Promptinary bridges this gap: it transforms prompt engineering from a solitary, trial-and-error activity into a social, high-stakes competition with clear feedback loops.
+PromptOff bridges this gap: it transforms prompt engineering from a solitary, trial-and-error activity into a social, high-stakes competition with clear feedback loops.
 
 ---
 
@@ -67,7 +67,7 @@ All images are sourced from royalty-free repositories (Unsplash, Pexels, Wikimed
 
 ## The Token System
 
-Tokens are the central constraint mechanic of Promptinary. Each player begins every round with a fixed allocation. Characters in the prompt are counted and converted to approximate tokens (roughly 4 characters = 1 token).
+Tokens are the central constraint mechanic of PromptOff. Each player begins every round with a fixed allocation. Characters in the prompt are counted and converted to approximate tokens (roughly 4 characters = 1 token).
 
 > **Why Tokens?** Token limits force meaningful trade-offs. A player must decide: do I describe the lighting in detail, or trust the AI to infer it? Do I name an art style explicitly, or save tokens for compositional details? These decisions are the heart of the game.
 
@@ -105,7 +105,7 @@ Power-ups add a strategic layer to competitive play, allowing players to influen
 
 ## Venue & Institutional Applications
 
-Promptinary is uniquely positioned to extend beyond consumer gaming into physical venues. The game's visual, accessible nature makes it ideal for audience engagement in cultural and entertainment contexts.
+PromptOff is uniquely positioned to extend beyond consumer gaming into physical venues. The game's visual, accessible nature makes it ideal for audience engagement in cultural and entertainment contexts.
 
 | Venue Type | Use Case |
 |---|---|
@@ -163,14 +163,14 @@ After submission, there is a dramatic reveal sequence:
 
 ## Competitive Differentiation
 
-Promptinary occupies a unique market position that no existing product directly addresses:
+PromptOff occupies a unique market position that no existing product directly addresses:
 
-| Competitor / Comparator | Gap Promptinary Fills |
+| Competitor / Comparator | Gap PromptOff Fills |
 |---|---|
 | Midjourney / DALL-E / Stable Diffusion | These are tools, not games. No social layer, no scoring, no constraints that create competitive tension. |
-| Gartic Phone / Skribbl.io | Drawing games with no AI involvement. Promptinary brings AI generation as the creative medium. |
+| Gartic Phone / Skribbl.io | Drawing games with no AI involvement. PromptOff brings AI generation as the creative medium. |
 | AI Prompt marketplaces | Transactional, not playful. No competitive or educational game loop. |
-| Museum interactives | Most are passive or single-player kiosks. Promptinary adds multiplayer and real-time competition. |
+| Museum interactives | Most are passive or single-player kiosks. PromptOff adds multiplayer and real-time competition. |
 
 ---
 
@@ -198,5 +198,5 @@ Promptinary occupies a unique market position that no existing product directly 
 
 ---
 
-*Promptinary turns the art of prompting into a sport.*
+*PromptOff turns the art of prompting into a sport.*
 *Every token counts. Every second matters. Every image tells a story.*

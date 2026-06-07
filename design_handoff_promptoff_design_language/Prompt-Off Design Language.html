@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt-Off · Design Language</title>
+<link rel="stylesheet" href="promptoff.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: #E7E6DD; }
+  .phone { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="foundations.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="directions.jsx"></script>
+
+<script type="text/babel">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+const PHONE_W = 332, PHONE_H = 720;
+
+function Phone({ children }) {
+  return <div className="phone">{children}</div>;
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="foundations" title="Prompt-Off — Foundations" subtitle="The new system: acid + ink on paper, mono token DNA, sharpened brutalist shapes">
+        <DCArtboard id="logo"  label="Logo & wordmark" width={620} height={360}><LogoBoard /></DCArtboard>
+        <DCArtboard id="color" label="Color" width={620} height={420}><ColorBoard /></DCArtboard>
+        <DCArtboard id="type"  label="Type" width={620} height={520}><TypeBoard /></DCArtboard>
+        <DCArtboard id="depth" label="Depth & shape" width={620} height={420}><ShadowBoard /></DCArtboard>
+        <DCArtboard id="comp"  label="Components" width={760} height={440}><ComponentsBoard /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="screens" title="Screens — redesigned" subtitle="All six core screens in the new language">
+        <DCArtboard id="s-landing" label="01 · Landing"     width={PHONE_W} height={PHONE_H}><Phone><LandingScreen /></Phone></DCArtboard>
+        <DCArtboard id="s-lobby"   label="02 · Lobby"       width={PHONE_W} height={PHONE_H}><Phone><LobbyScreen /></Phone></DCArtboard>
+        <DCArtboard id="s-game"    label="03 · Game ★"      width={PHONE_W} height={PHONE_H}><Phone><GameScreen /></Phone></DCArtboard>
+        <DCArtboard id="s-result"  label="04 · Results"     width={PHONE_W} height={PHONE_H}><Phone><ResultsScreen /></Phone></DCArtboard>
+        <DCArtboard id="s-rank"    label="05 · Leaderboard" width={PHONE_W} height={PHONE_H}><Phone><LeaderboardScreen /></Phone></DCArtboard>
+        <DCArtboard id="s-profile" label="06 · Profile / Stats" width={PHONE_W} height={PHONE_H}><Phone><ProfileScreen /></Phone></DCArtboard>
+      </DCSection>
+
+      <DCSection id="directions" title="Directions to explore" subtitle="Same game screen, three intensities — how far do we lean into the terminal?">
+        <DCArtboard id="d-light" label="A · Light (paper base)" width={PHONE_W} height={PHONE_H}><Phone><GameScreen /></Phone></DCArtboard>
+        <DCArtboard id="d-dark"  label="B · Terminal (dark)"    width={PHONE_W} height={PHONE_H}><Phone><GameDark /></Phone></DCArtboard>
+        <DCArtboard id="d-acid"  label="C · Acid hero"          width={PHONE_W} height={PHONE_H}><Phone><GameAcid /></Phone></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

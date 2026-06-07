@@ -1,5 +1,5 @@
-# Promptinary — UI Design Specification
-> **For the coding agent:** This document defines every visual and interaction design decision for Promptinary. All implementation decisions — colors, fonts, spacing, components, animations — must strictly follow this spec. The design language is derived from the *Indopendence Quiz Game App* by Peter Haltermy on Dribbble (shot #26108795).
+# PromptOff — UI Design Specification
+> **For the coding agent:** This document defines every visual and interaction design decision for PromptOff. All implementation decisions — colors, fonts, spacing, components, animations — must strictly follow this spec. The design language is derived from the *Indopendence Quiz Game App* by Peter Haltermy on Dribbble (shot #26108795).
 
 ---
 

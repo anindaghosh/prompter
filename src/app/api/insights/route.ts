@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
         const statsText = `Lifetime: ${stats.gamesPlayed} games, ${stats.gamesWon} wins, best score ${stats.bestScore}, avg similarity ${stats.avgSimilarity}%, avg tokens/round ${stats.avgTokens}.`;
 
-        const prompt = `You are a coach for "Promptinary", a game where players write AI image prompts to recreate a reference image. They are scored on visual similarity (60%), prompt efficiency / tokens saved (25%), and speed (15%). Each round we already gave the player a one-line tip; those tips are included below.
+        const prompt = `You are a coach for "PromptOff", a game where players write AI image prompts to recreate a reference image. They are scored on visual similarity (60%), prompt efficiency / tokens saved (25%), and speed (15%). Each round we already gave the player a one-line tip; those tips are included below.
 
 Analyze THIS player's recent performance and cumulative stats. Compare patterns against the player's OWN averages — find what they consistently do well, where they consistently fall short, and what concrete changes would help most.
 

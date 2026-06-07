@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Promptinary — The AI Prompt Challenge Game',
+  title: 'PromptOff — The AI Prompt Challenge Game',
   description: 'Race to recreate images using AI prompts! The ultimate competitive prompt engineering game. Every token counts. Every second matters.',
 };
 
