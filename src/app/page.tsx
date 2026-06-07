@@ -333,10 +333,10 @@ export default function LandingPage() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-              <button className="btn btn-ghost" onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 24, width: '100%' }}>
+              <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0 }} onClick={() => router.push('/leaderboard')}>🏆 Global Leaderboard</button>
               {connected && (
-                <button className="btn btn-ghost" onClick={() => router.push('/stats')}>📊 My Stats</button>
+                <button className="btn btn-ghost" style={{ flex: 1, width: 'auto', minWidth: 0 }} onClick={() => router.push('/stats')}>📊 My Stats</button>
               )}
             </div>
           </>
