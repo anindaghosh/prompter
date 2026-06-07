@@ -39,6 +39,7 @@ import CreateRoomReducer from "./create_room_reducer";
 import JoinRoomReducer from "./join_room_reducer";
 import NextRoundReducer from "./next_round_reducer";
 import PlayAgainReducer from "./play_again_reducer";
+import SaveInsightsReducer from "./save_insights_reducer";
 import SeedTipsReducer from "./seed_tips_reducer";
 import StartGameReducer from "./start_game_reducer";
 import SubmitPromptReducer from "./submit_prompt_reducer";
@@ -54,6 +55,7 @@ import GameHistoryRow from "./game_history_table";
 import GameTipRow from "./game_tip_table";
 import GlobalLeaderboardRow from "./global_leaderboard_table";
 import PlayerRow from "./player_table";
+import PlayerInsightsRow from "./player_insights_table";
 import PlayerPowerupRow from "./player_powerup_table";
 import PowerupEventRow from "./powerup_event_table";
 import RoomRow from "./room_table";
@@ -116,6 +118,17 @@ const tablesSchema = __schema({
       { name: 'player_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, PlayerRow),
+  playerInsights: __table({
+    name: 'player_insights',
+    indexes: [
+      { accessor: 'identity', name: 'player_insights_identity_idx_btree', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'player_insights_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, PlayerInsightsRow),
   playerPowerup: __table({
     name: 'player_powerup',
     indexes: [
@@ -224,6 +237,7 @@ const reducersSchema = __reducers(
   __reducerSchema("join_room", JoinRoomReducer),
   __reducerSchema("next_round", NextRoundReducer),
   __reducerSchema("play_again", PlayAgainReducer),
+  __reducerSchema("save_insights", SaveInsightsReducer),
   __reducerSchema("seed_tips", SeedTipsReducer),
   __reducerSchema("start_game", StartGameReducer),
   __reducerSchema("submit_prompt", SubmitPromptReducer),

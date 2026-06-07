@@ -28,6 +28,7 @@ export const GameHistory = __t.object("GameHistory", {
   totalScore: __t.u32(),
   avgSimilarity: __t.u32(),
   roundsPlayed: __t.u32(),
+  roundSummaries: __t.string(),
 });
 export type GameHistory = __Infer<typeof GameHistory>;
 
@@ -58,6 +59,15 @@ export const Player = __t.object("Player", {
   roundScores: __t.string(),
 });
 export type Player = __Infer<typeof Player>;
+
+export const PlayerInsights = __t.object("PlayerInsights", {
+  identity: __t.identity(),
+  strengths: __t.string(),
+  weaknesses: __t.string(),
+  improvements: __t.string(),
+  generatedAt: __t.timestamp(),
+});
+export type PlayerInsights = __Infer<typeof PlayerInsights>;
 
 export const PlayerPowerup = __t.object("PlayerPowerup", {
   identity: __t.identity(),

@@ -20,4 +20,5 @@ export default __t.row({
   totalScore: __t.u32().name("total_score"),
   avgSimilarity: __t.u32().name("avg_similarity"),
   roundsPlayed: __t.u32().name("rounds_played"),
+  roundSummaries: __t.string().name("round_summaries"),
 });

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useStats } from '@/hooks/useStats';
 import StatCard from '@/components/StatCard';
+import InsightsPanel from '@/components/InsightsPanel';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -121,6 +122,8 @@ export default function StatsPage() {
                 </div>
               )}
             </div>
+
+            <InsightsPanel stats={stats} history={history} />
           </>
         )}
       </div>

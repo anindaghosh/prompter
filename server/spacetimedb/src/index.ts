@@ -236,6 +236,19 @@ const gameHistory = table(
     total_score:    t.u32(),
     avg_similarity: t.u32(),
     rounds_played:  t.u32(),
+    round_summaries: t.string(), // JSON: [{ s:similarity, t:tokens, tip:reasoning, b:breakdownJson }]
+  }
+);
+
+// Per-identity cached AI insights (refreshed at most once / 24h)
+const playerInsights = table(
+  { name: 'player_insights', public: true },
+  {
+    identity:     t.identity().primaryKey(),
+    strengths:    t.string(),    // JSON string[]
+    weaknesses:   t.string(),    // JSON string[]
+    improvements: t.string(),    // JSON string[]
+    generated_at: t.timestamp(),
   }
 );
 
@@ -293,7 +306,7 @@ const roundEndTimer = table(
 const spacetimedb = schema({
   room, player, userProfile, submission, roundResult, playerPowerup, powerupEvent,
   countdownTimer, roundStartTimer, roundEndTimer, globalLeaderboard, gameTip,
-  userStats, gameHistory,
+  userStats, gameHistory, playerInsights,
 });
 export default spacetimedb;
 
@@ -517,6 +530,27 @@ export const updateProfile = spacetimedb.reducer(
       avatar_id:          avatarId,
       updated_at:         ctx.timestamp,
     });
+  }
+);
+
+export const saveInsights = spacetimedb.reducer(
+  { strengths: t.string(), weaknesses: t.string(), improvements: t.string() },
+  (ctx, { strengths, weaknesses, improvements }) => {
+    const COOLDOWN_US = 24n * 60n * 60n * 1_000_000n; // 24 hours
+    const existing = ctx.db.playerInsights.identity.find(ctx.sender);
+    if (existing) {
+      const elapsedUs = ctx.timestamp.microsSinceUnixEpoch - existing.generated_at.microsSinceUnixEpoch;
+      if (elapsedUs < COOLDOWN_US) {
+        throw new SenderError('Insights can only be refreshed once every 24 hours.');
+      }
+      ctx.db.playerInsights.identity.update({
+        ...existing, strengths, weaknesses, improvements, generated_at: ctx.timestamp,
+      });
+    } else {
+      ctx.db.playerInsights.insert({
+        identity: ctx.sender, strengths, weaknesses, improvements, generated_at: ctx.timestamp,
+      });
+    }
   }
 );
 
@@ -936,6 +970,11 @@ export const nextRound = spacetimedb.reducer(
         const avgSimilarity = roundsPlayed > 0 ? Math.round(totalSimilarity / roundsPlayed) : 0;
         const totalTokens = playerResults.reduce((s, r) => s + r.tokens_used, 0);
 
+        // Capture per-round AI tips + scores before round_result rows are wiped on playAgain
+        const roundSummaries = JSON.stringify(playerResults.map(r => ({
+          s: r.similarity_score, t: r.tokens_used, tip: r.reasoning, b: r.score_breakdown,
+        })));
+
         const existingStats = ctx.db.userStats.identity.find(pl.identity);
         if (!existingStats) {
           ctx.db.userStats.insert({
@@ -973,6 +1012,7 @@ export const nextRound = spacetimedb.reducer(
           total_score:    pl.total_score,
           avg_similarity: avgSimilarity,
           rounds_played:  roundsPlayed,
+          round_summaries: roundSummaries,
         });
       }
     } else {
