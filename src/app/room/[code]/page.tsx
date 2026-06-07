@@ -44,7 +44,6 @@ const REFERENCE_IMAGES = [
   { id: 'img-013', filename: 'castle-ruins.jpg',    category: 'Architecture', difficulty: 'Medium', title: 'Castle Ruins' },
   { id: 'img-014', filename: 'arctic-fox.jpg',       category: 'Nature',       difficulty: 'Medium', title: 'Arctic Fox' },
   { id: 'img-015', filename: 'art-deco.jpg',        category: 'Architecture', difficulty: 'Hard',   title: 'Art Deco Interior' },
-  { id: 'img-016', filename: 'tulip-fields.jpg',    category: 'Nature',       difficulty: 'Easy',   title: 'Tulip Fields' },
   { id: 'img-017', filename: 'steampunk.jpg',        category: 'Concept Art',  difficulty: 'Hard',   title: 'Steampunk City' },
   { id: 'img-018', filename: 'greek-island.jpg',    category: 'Photography',  difficulty: 'Easy',   title: 'Greek Island' },
   { id: 'img-019', filename: 'cubist-portrait.jpg', category: 'Fine Art',     difficulty: 'Hard',   title: 'Cubist Portrait' },
