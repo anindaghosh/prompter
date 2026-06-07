@@ -70,7 +70,7 @@ const room = table(
     token_budget:     t.u32(),
     used_image_ids:   t.string(), // JSON string[]
     countdown_value:  t.u32(),
-    stats_recorded:   t.bool(),
+    stats_recorded:   t.bool().default(false),
   }
 );
 
