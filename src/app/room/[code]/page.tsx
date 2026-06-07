@@ -24,9 +24,6 @@ import {
   AVATARS,
 } from '@/hooks/useGameSocket';
 
-// ── Client-side constants matching server ────────────────────────────────────
-
-const ROUND_DURATION_MS = 90_000;
 
 const REFERENCE_IMAGES = [
   { id: 'img-001', filename: 'starry-night.jpg',    category: 'Fine Art',     difficulty: 'Hard',   title: 'Starry Night Style' },
@@ -34,13 +31,13 @@ const REFERENCE_IMAGES = [
   { id: 'img-003', filename: 'neon-city.jpg',        category: 'Concept Art',  difficulty: 'Hard',   title: 'Neon Cityscape' },
   { id: 'img-004', filename: 'cherry-blossom.jpg',  category: 'Nature',       difficulty: 'Easy',   title: 'Cherry Blossoms' },
   { id: 'img-005', filename: 'lighthouse.jpg',       category: 'Architecture', difficulty: 'Medium', title: 'Lighthouse at Dusk' },
-  { id: 'img-006', filename: 'hot-air-balloon.jpg', category: 'Photography',  difficulty: 'Medium', title: 'Hot Air Balloons' },
+  { id: 'img-006', filename: 'hot-air-balloon.png', category: 'Photography',  difficulty: 'Medium', title: 'Hot Air Balloons' },
   { id: 'img-007', filename: 'underwater.jpg',       category: 'Nature',       difficulty: 'Hard',   title: 'Underwater Coral' },
   { id: 'img-008', filename: 'desert-dunes.jpg',    category: 'Photography',  difficulty: 'Easy',   title: 'Desert Dunes' },
   { id: 'img-009', filename: 'space-nebula.jpg',    category: 'Concept Art',  difficulty: 'Hard',   title: 'Space Nebula' },
   { id: 'img-010', filename: 'autumn-forest.jpg',   category: 'Nature',       difficulty: 'Easy',   title: 'Autumn Forest' },
   { id: 'img-011', filename: 'tokyo-street.jpg',    category: 'Photography',  difficulty: 'Medium', title: 'Tokyo Street' },
-  { id: 'img-012', filename: 'abstract-waves.jpg',  category: 'Fine Art',     difficulty: 'Hard',   title: 'Abstract Waves' },
+  { id: 'img-012', filename: 'abstract-waves.png',  category: 'Fine Art',     difficulty: 'Hard',   title: 'Abstract Waves' },
   { id: 'img-013', filename: 'castle-ruins.jpg',    category: 'Architecture', difficulty: 'Medium', title: 'Castle Ruins' },
   { id: 'img-014', filename: 'arctic-fox.jpg',       category: 'Nature',       difficulty: 'Medium', title: 'Arctic Fox' },
   { id: 'img-015', filename: 'art-deco.jpg',        category: 'Architecture', difficulty: 'Hard',   title: 'Art Deco Interior' },
@@ -194,7 +191,7 @@ export default function GameRoomPage() {
       totalRounds: room.totalRounds,
       referenceImage,
       tokenBudget: room.tokenBudget,
-      roundDurationMs: ROUND_DURATION_MS,
+      roundDurationMs: Number(room.roundDurationUs / 1000n),
       countdownValue: room.countdownValue,
       submittedThisRound,
       waitingForPlayers,
@@ -331,7 +328,8 @@ export default function GameRoomPage() {
 
       const roundStartMs = Number(room.roundStartUs / BigInt(1000));
       const elapsedMs = Date.now() - roundStartMs;
-      const remaining = Math.max(0, Math.ceil((ROUND_DURATION_MS - elapsedMs) / 1000));
+      const roundDurationMs = Number(room.roundDurationUs / 1000n);
+      const remaining = Math.max(0, Math.ceil((roundDurationMs - elapsedMs) / 1000));
 
       const myHex = myHexRef.current;
       const myPp = myHex

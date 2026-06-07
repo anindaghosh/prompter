@@ -3,8 +3,8 @@ import { ScheduleAt } from 'spacetimedb';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROUND_DURATION_US = 90_000_000n; // 90 seconds in microseconds
-const TOKEN_BUDGET = 120;
+const VALID_TOKEN_BUDGETS = [20, 60, 120, 200];
+const VALID_ROUND_DURATIONS = [30, 60, 90];
 
 const POWERUP_POOL = ['TOKEN_DRAIN', 'FREEZE', 'TOKEN_SHIELD', 'HINT', 'DOUBLE_POINTS', 'CATEGORY'];
 const AVATARS = ['🦸', '🧙', '🤖', '👾', '🦊', '🐉', '🦅', '🐺', '🦁', '🐯'];
@@ -38,13 +38,13 @@ const REFERENCE_IMAGES = [
   { id: 'img-003', filename: 'neon-city.jpg',        category: 'Concept Art',  difficulty: 'Hard',   title: 'Neon Cityscape' },
   { id: 'img-004', filename: 'cherry-blossom.jpg',  category: 'Nature',       difficulty: 'Easy',   title: 'Cherry Blossoms' },
   { id: 'img-005', filename: 'lighthouse.jpg',       category: 'Architecture', difficulty: 'Medium', title: 'Lighthouse at Dusk' },
-  { id: 'img-006', filename: 'hot-air-balloon.jpg', category: 'Photography',  difficulty: 'Medium', title: 'Hot Air Balloons' },
+  { id: 'img-006', filename: 'hot-air-balloon.png', category: 'Photography',  difficulty: 'Medium', title: 'Hot Air Balloons' },
   { id: 'img-007', filename: 'underwater.jpg',       category: 'Nature',       difficulty: 'Hard',   title: 'Underwater Coral' },
   { id: 'img-008', filename: 'desert-dunes.jpg',    category: 'Photography',  difficulty: 'Easy',   title: 'Desert Dunes' },
   { id: 'img-009', filename: 'space-nebula.jpg',    category: 'Concept Art',  difficulty: 'Hard',   title: 'Space Nebula' },
   { id: 'img-010', filename: 'autumn-forest.jpg',   category: 'Nature',       difficulty: 'Easy',   title: 'Autumn Forest' },
   { id: 'img-011', filename: 'tokyo-street.jpg',    category: 'Photography',  difficulty: 'Medium', title: 'Tokyo Street' },
-  { id: 'img-012', filename: 'abstract-waves.jpg',  category: 'Fine Art',     difficulty: 'Hard',   title: 'Abstract Waves' },
+  { id: 'img-012', filename: 'abstract-waves.png',  category: 'Fine Art',     difficulty: 'Hard',   title: 'Abstract Waves' },
   { id: 'img-013', filename: 'castle-ruins.jpg',    category: 'Architecture', difficulty: 'Medium', title: 'Castle Ruins' },
   { id: 'img-014', filename: 'arctic-fox.jpg',      category: 'Nature',       difficulty: 'Medium', title: 'Arctic Fox' },
   { id: 'img-015', filename: 'art-deco.jpg',        category: 'Architecture', difficulty: 'Hard',   title: 'Art Deco Interior' },
@@ -67,6 +67,7 @@ const room = table(
     current_image_id: t.string(),
     round_start_us:   t.u64(), // microseconds since epoch (0 when not playing)
     token_budget:     t.u32(),
+    round_duration_us: t.u64(),
     used_image_ids:   t.string(), // JSON string[]
     countdown_value:  t.u32(),
     stats_recorded:   t.bool().default(false),
@@ -462,20 +463,20 @@ function startRound(ctx: any, roomCode: string, rm: any) {
     round: newRound,
   });
 
-  // Round ends 90 seconds after round starts
+  // Round ends after the configured duration
   ctx.db.roundEndTimer.insert({
     scheduled_id: 0n,
-    scheduled_at: ScheduleAt.time(nowUs + 3_000_000n + ROUND_DURATION_US),
+    scheduled_at: ScheduleAt.time(nowUs + 3_000_000n + rm.round_duration_us),
     room_code: roomCode,
     round: newRound,
   });
 }
 
-function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs: number): { total: number; simScore: number; effScore: number; speedScore: number } {
+function calcScore(similarityScore: number, tokensUsed: number, submissionTimeMs: number, tokenBudget: number, roundDurationUs: bigint): { total: number; simScore: number; effScore: number; speedScore: number } {
   const simScore = Math.min(100, Math.max(0, similarityScore)) * 0.60;
-  const savedTokens = Math.max(0, TOKEN_BUDGET - tokensUsed);
-  const effScore = (savedTokens / TOKEN_BUDGET) * 100 * 0.25;
-  const roundDurationMs = Number(ROUND_DURATION_US / 1000n);
+  const savedTokens = Math.max(0, tokenBudget - tokensUsed);
+  const effScore = (savedTokens / tokenBudget) * 100 * 0.25;
+  const roundDurationMs = Number(roundDurationUs / 1000n);
   const normalizedTime = Math.max(0, Math.min(1, submissionTimeMs / roundDurationMs));
   const speedScore = (1 - normalizedTime) * 100 * 0.15;
   return {
@@ -554,10 +555,16 @@ export const saveInsights = spacetimedb.reducer(
 );
 
 export const createRoom = spacetimedb.reducer(
-  { totalRounds: t.u32() },
-  (ctx, { totalRounds }) => {
+  { totalRounds: t.u32(), tokenBudget: t.u32(), roundDurationSecs: t.u32() },
+  (ctx, { totalRounds, tokenBudget, roundDurationSecs }) => {
     if (![1, 3, 5].includes(totalRounds)) {
       throw new SenderError(`totalRounds must be 1, 3, or 5`);
+    }
+    if (!VALID_TOKEN_BUDGETS.includes(tokenBudget)) {
+      throw new SenderError(`tokenBudget must be one of ${VALID_TOKEN_BUDGETS.join(', ')}`);
+    }
+    if (!VALID_ROUND_DURATIONS.includes(roundDurationSecs)) {
+      throw new SenderError(`roundDurationSecs must be one of ${VALID_ROUND_DURATIONS.join(', ')}`);
     }
     const profile = ctx.db.userProfile.identity.find(ctx.sender);
     if (!profile) throw new SenderError('Create a profile before creating a room.');
@@ -591,7 +598,8 @@ export const createRoom = spacetimedb.reducer(
       total_rounds: totalRounds,
       current_image_id: '',
       round_start_us: 0n,
-      token_budget: TOKEN_BUDGET,
+      token_budget: tokenBudget,
+      round_duration_us: BigInt(roundDurationSecs) * 1_000_000n,
       used_image_ids: '[]',
       countdown_value: 3,
       stats_recorded: false,
@@ -719,7 +727,7 @@ export const submitPrompt = spacetimedb.reducer(
     // Apply token drain
     const pp = ctx.db.playerPowerup.identity.find(ctx.sender);
     const drainAmount = pp ? pp.token_drain_amount : 0;
-    const effectiveBudget = Math.max(0, TOKEN_BUDGET - drainAmount);
+    const effectiveBudget = Math.max(0, rm.token_budget - drainAmount);
     const clampedTokens = Math.min(tokensUsed, effectiveBudget);
 
     ctx.db.submission.insert({
@@ -763,7 +771,7 @@ export const submitScore = spacetimedb.reducer(
     const pp = ctx.db.playerPowerup.identity.find(ctx.sender);
     const hasDoublePoints = pp ? pp.has_double_points : false;
 
-    const scored = calcScore(similarityScore, sub.tokens_used, Number(sub.submission_time_ms));
+    const scored = calcScore(similarityScore, sub.tokens_used, Number(sub.submission_time_ms), rm.token_budget, rm.round_duration_us);
     let roundScore = scored.total;
     if (hasDoublePoints) roundScore = roundScore * 2;
 

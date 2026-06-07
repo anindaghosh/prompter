@@ -12,4 +12,6 @@ import {
 
 export default {
   totalRounds: __t.u32(),
+  tokenBudget: __t.u32(),
+  roundDurationSecs: __t.u32(),
 };

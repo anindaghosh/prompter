@@ -28,6 +28,8 @@ export default function LandingPage() {
   const [joinCode, setJoinCode] = useState('');
   const [tab, setTab] = useState<'create' | 'join'>('create');
   const [roundCount, setRoundCount] = useState<1 | 3 | 5>(3);
+  const [roundDurationSecs, setRoundDurationSecs] = useState<30 | 60 | 90>(90);
+  const [tokenBudget, setTokenBudget] = useState<20 | 60 | 120 | 200>(120);
   const [loading, setLoading] = useState<'create' | 'join' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
@@ -86,7 +88,7 @@ export default function LandingPage() {
       const conn = connRef.current;
       if (!conn) throw new Error('Not connected');
       awaitingRoom.current = true;
-      conn.reducers.createRoom({ totalRounds: roundCount })
+      conn.reducers.createRoom({ totalRounds: roundCount, tokenBudget, roundDurationSecs })
         .catch((e: unknown) => failRoom(e instanceof Error ? e.message : 'Failed to create room'));
       timeoutRef.current = setTimeout(() => failRoom('Failed to create room — please try again'), 10_000);
     } catch (e: unknown) {
@@ -288,6 +290,60 @@ export default function LandingPage() {
                         }}
                       >
                         {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div className="po-kicker" style={{ marginBottom: 10 }}>Round Duration</div>
+                  <div style={{ display: 'flex', background: 'var(--paper-2)', borderRadius: 'var(--r)', padding: 4, border: 'var(--bd)' }}>
+                    {([{ label: '30s', value: 30 }, { label: '1 min', value: 60 }, { label: '90s', value: 90 }] as const).map(({ label, value }) => (
+                      <button key={value} onClick={() => setRoundDurationSecs(value)} style={{
+                        flex: 1, padding: '10px 0',
+                        border: roundDurationSecs === value ? 'var(--bd)' : '2px solid transparent',
+                        borderRadius: 'var(--r)',
+                        background: roundDurationSecs === value ? 'var(--acid)' : 'transparent',
+                        fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 16,
+                        cursor: 'pointer',
+                        boxShadow: roundDurationSecs === value ? 'var(--sh-xs)' : 'none',
+                        transition: 'all 120ms ease',
+                        color: roundDurationSecs === value ? 'var(--ink)' : 'var(--black)',
+                      }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div className="po-kicker" style={{ marginBottom: 10 }}>Token Budget</div>
+                  <div style={{
+                    display: 'flex', background: 'var(--paper-2)',
+                    borderRadius: 'var(--r)', padding: 4, border: 'var(--bd)',
+                  }}>
+                    {([
+                      { label: 'Beginner', value: 200 as const },
+                      { label: 'Standard', value: 120 as const },
+                      { label: 'Expert', value: 60 as const },
+                      { label: 'Haiku', value: 20 as const },
+                    ]).map(({ label, value }) => (
+                      <button
+                        key={value}
+                        onClick={() => setTokenBudget(value)}
+                        style={{
+                          flex: 1, padding: '8px 0',
+                          border: tokenBudget === value ? 'var(--bd)' : '2px solid transparent',
+                          borderRadius: 'var(--r)',
+                          background: tokenBudget === value ? 'var(--acid)' : 'transparent',
+                          fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 12,
+                          cursor: 'pointer',
+                          boxShadow: tokenBudget === value ? 'var(--sh-xs)' : 'none',
+                          transition: 'all 120ms ease',
+                          color: tokenBudget === value ? 'var(--ink)' : 'var(--black)',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        }}
+                      >
+                        <span>{label}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7 }}>{value}t</span>
                       </button>
                     ))}
                   </div>

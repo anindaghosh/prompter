@@ -109,6 +109,7 @@ export const Room = __t.object("Room", {
   currentImageId: __t.string(),
   roundStartUs: __t.u64(),
   tokenBudget: __t.u32(),
+  roundDurationUs: __t.u64(),
   usedImageIds: __t.string(),
   countdownValue: __t.u32(),
   statsRecorded: __t.bool(),

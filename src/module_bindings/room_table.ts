@@ -19,6 +19,7 @@ export default __t.row({
   currentImageId: __t.string().name("current_image_id"),
   roundStartUs: __t.u64().name("round_start_us"),
   tokenBudget: __t.u32().name("token_budget"),
+  roundDurationUs: __t.u64().name("round_duration_us"),
   usedImageIds: __t.string().name("used_image_ids"),
   countdownValue: __t.u32().name("countdown_value"),
   statsRecorded: __t.bool().name("stats_recorded"),
