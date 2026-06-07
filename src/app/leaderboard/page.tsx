@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { onStdbConnected } from '@/lib/spacetimedb';
 import type { DbConnection } from '@/module_bindings';
+import BottomNav from '@/components/BottomNav';
 
 type GlobalLeaderboard = InstanceType<typeof DbConnection>['db']['globalLeaderboard'] extends { iter(): Iterable<infer R> } ? R : never;
-
-const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
 function formatDate(updatedAtUs: bigint): string {
   const ms = Number(updatedAtUs / 1000n);
@@ -15,7 +13,6 @@ function formatDate(updatedAtUs: bigint): string {
 }
 
 export default function LeaderboardPage() {
-  const router = useRouter();
   const [entries, setEntries] = useState<GlobalLeaderboard[]>([]);
   const [connected, setConnected] = useState(false);
 
@@ -42,90 +39,108 @@ export default function LeaderboardPage() {
 
   return (
     <div className="page-wrapper">
-      <div className="page-content" style={{ paddingTop: 24, paddingBottom: 48 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-          <button
-            onClick={() => router.push('/')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, opacity: 0.6, padding: '4px 0' }}
-          >
-            ← Home
-          </button>
-        </div>
-
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🏆</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 28, marginBottom: 8 }}>
-            Global Leaderboard
+      <div className="page-content" style={{ paddingTop: 24, paddingBottom: 96 }}>
+        <div style={{ marginBottom: 28 }}>
+          <div className="po-kicker" style={{ marginBottom: 6 }}>Global · Season 01</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 32, letterSpacing: '-0.03em', color: 'var(--black)' }}>
+            ▦ Leaderboard
           </h1>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6 }}>
-            Personal best scores across all games
-          </p>
         </div>
 
         {!connected ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', opacity: 0.5 }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 14 }}>Connecting…</div>
+            <div className="po-mono" style={{ fontSize: 14, color: 'var(--black)' }}>connecting...</div>
           </div>
         ) : entries.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🎮</div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6 }}>
+          <div className="po-panel" style={{ textAlign: 'center', padding: '48px 16px' }}>
+            <div className="po-kicker" style={{ color: 'var(--acid)', opacity: 1, marginBottom: 8 }}>Empty</div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, color: 'var(--paper)' }}>
               No scores yet. Play a full game to appear here!
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {entries.map((entry, i) => {
-              const rank = i + 1;
-              const isTop3 = rank <= 3;
-              return (
-                <div
-                  key={entry.playerName}
-                  className={`player-row ${isTop3 ? `rank-${rank}` : ''} animate-slide-up`}
-                  style={{ animationDelay: `${i * 0.06}s`, opacity: 0, animationFillMode: 'forwards' }}
-                >
-                  {/* Rank */}
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
-                    fontSize: isTop3 ? 22 : 16,
-                    width: 32,
-                    textAlign: 'center',
-                    flexShrink: 0,
-                  }}>
-                    {isTop3 ? RANK_MEDALS[rank - 1] : `#${rank}`}
-                  </div>
-
-                  {/* Name + secondary stats */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14 }}>
-                      {entry.playerName}
+          <>
+            {/* Top 3 podium */}
+            {entries.length >= 1 && (
+              <div className="po-panel" style={{ marginBottom: 12 }}>
+                <div className="po-kicker" style={{ color: 'var(--acid)', opacity: 1, marginBottom: 12 }}>Top Players</div>
+                {entries.slice(0, 3).map((entry, i) => {
+                  const rank = i + 1;
+                  return (
+                    <div
+                      key={entry.playerName}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 0',
+                        borderBottom: i < Math.min(entries.length - 1, 2) ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                      }}
+                      className="animate-slide-up"
+                    >
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontWeight: 900,
+                        fontSize: rank === 1 ? 20 : 15,
+                        color: rank === 1 ? 'var(--acid)' : 'var(--paper)',
+                        width: 28, textAlign: 'center', flexShrink: 0,
+                      }}>
+                        {String(rank).padStart(2, '0')}
+                      </span>
+                      <div className="po-avatar" style={{ background: rank === 1 ? 'var(--acid)' : 'rgba(255,255,255,0.1)', color: rank === 1 ? 'var(--ink)' : 'var(--paper)', borderColor: rank === 1 ? 'var(--acid)' : 'rgba(255,255,255,0.2)' }}>
+                        {entry.playerName.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--paper)' }}>
+                          {entry.playerName}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.5, marginTop: 1, color: 'var(--paper)' }}>
+                          {entry.gamesPlayed} game{entry.gamesPlayed !== 1 ? 's' : ''} · {formatDate(entry.updatedAtUs)}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: rank === 1 ? 'var(--acid)' : 'var(--paper)' }}>
+                        {entry.wins}
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 400, fontSize: 11, opacity: 0.5 }}> W</span>
+                      </div>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, opacity: 0.45, marginTop: 1 }}>
-                      {entry.gamesPlayed} game{entry.gamesPlayed !== 1 ? 's' : ''} · {entry.bestScore} pts best · {formatDate(entry.updatedAtUs)}
-                    </div>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
 
-                  {/* Wins */}
-                  <div style={{
-                    fontFamily: 'var(--font-display)',
-                    fontWeight: 900,
-                    fontSize: 20,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}>
-                    {entry.wins}
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 11, opacity: 0.6 }}>
-                      W
+            {/* Remaining entries */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {entries.slice(3).map((entry, i) => {
+                const rank = i + 4;
+                return (
+                  <div
+                    key={entry.playerName}
+                    className="po-row animate-slide-up"
+                    style={{ animationDelay: `${(i + 3) * 0.06}s`, opacity: 0, animationFillMode: 'forwards' }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 13, width: 28, textAlign: 'center', flexShrink: 0, color: 'var(--black)' }}>
+                      #{rank}
                     </span>
+                    <div className="po-avatar">
+                      {entry.playerName.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: 'var(--black)' }}>
+                        {entry.playerName}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.45, marginTop: 1, color: 'var(--black)' }}>
+                        {entry.gamesPlayed} game{entry.gamesPlayed !== 1 ? 's' : ''} · {entry.bestScore} pts best
+                      </div>
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--black)' }}>
+                      {entry.wins}
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 400, fontSize: 11, opacity: 0.6 }}> W</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }

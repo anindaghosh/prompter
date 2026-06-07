@@ -12,7 +12,6 @@ interface ResultsRevealProps {
 export default function ResultsReveal({ results, referenceImage, myPlayerId }: ResultsRevealProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Reset to first card when results change (new round)
   useEffect(() => { setActiveIndex(0); }, [results]);
 
   const active = results[activeIndex];
@@ -21,12 +20,10 @@ export default function ResultsReveal({ results, referenceImage, myPlayerId }: R
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 22, letterSpacing: '-0.02em', color: 'var(--black)' }}>
           Round Results
         </h2>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.45 }}>
-          {activeIndex + 1} / {results.length}
-        </span>
+        <span className="po-chip">{activeIndex + 1} / {results.length}</span>
       </div>
 
       {/* Avatar nav */}
@@ -52,32 +49,32 @@ function AvatarNav({ results, activeIndex, onSelect }: {
   onSelect: (i: number) => void;
 }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 0, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
       {results.map((r, i) => {
         const active = i === activeIndex;
+        const initials = r.playerName.slice(0, 2).toUpperCase();
         return (
           <button
             key={r.playerId}
             onClick={() => onSelect(i)}
             title={r.playerName}
+            className="po-avatar"
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 'var(--radius-pill)',
-              border: active ? '2.5px solid var(--black)' : '2px solid transparent',
-              background: 'var(--white)',
-              fontSize: 22,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: 42,
+              height: 42,
               cursor: 'pointer',
-              opacity: active ? 1 : 0.45,
-              boxShadow: active ? 'var(--shadow-sm)' : 'none',
-              transition: 'opacity 150ms, border-color 150ms, box-shadow 150ms',
+              background: active ? 'var(--acid)' : 'var(--paper-2)',
+              color: active ? 'var(--ink)' : 'var(--black)',
+              opacity: active ? 1 : 0.5,
+              boxShadow: active ? 'var(--sh)' : 'none',
+              border: active ? 'var(--bd)' : 'var(--bd1)',
+              transform: active ? 'translate(-1px,-1px)' : 'none',
+              transition: 'all 150ms ease',
               padding: 0,
+              fontSize: 15,
             }}
           >
-            {r.playerAvatar ?? r.avatar}
+            {initials}
           </button>
         );
       })}
@@ -95,78 +92,61 @@ function PlayerResultCard({
   isMe: boolean;
 }) {
   const isWinner = result.rank === 1;
+  const cardTextColor = isMe ? 'var(--ink)' : isWinner ? 'var(--paper)' : 'var(--black)';
+  const cardClass = isMe ? 'po-card card-acid' : isWinner ? 'po-panel' : 'po-card';
 
   return (
     <div
-      className="card"
-      style={{
-        background: isMe ? 'var(--lavender)' : isWinner ? 'var(--gold)' : 'var(--white)',
-        position: 'relative',
-        overflow: 'visible',
-      }}
+      className={cardClass}
+      style={{ position: 'relative', overflow: 'visible' }}
     >
-      {/* Rank + winner badge */}
+      {/* Winner badge */}
       {isWinner && (
         <div style={{
           position: 'absolute',
           top: -12,
-          left: 16,
-          background: 'var(--teal)',
-          color: 'var(--white)',
-          border: 'var(--border)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '3px 12px',
-          fontFamily: 'var(--font-body)',
-          fontWeight: 700,
-          fontSize: 12,
-          boxShadow: 'var(--shadow-sm)',
+          left: 14,
         }}>
-          🏆 Winner
+          <span className="po-chip po-chip--acid">★ Winner</span>
         </div>
       )}
 
       {/* Player header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-        <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: 'var(--radius-pill)',
-          border: 'var(--border)',
-          background: 'var(--white)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 18,
-          flexShrink: 0,
-          boxShadow: 'var(--shadow-sm)',
+        <div className="po-avatar" style={{
+          background: isMe ? 'var(--ink)' : isWinner ? 'rgba(255,255,255,0.1)' : 'var(--paper-2)',
+          color: isMe ? 'var(--acid)' : isWinner ? 'var(--acid)' : 'var(--ink)',
+          width: 38, height: 38,
         }}>
-          {result.playerAvatar ?? result.avatar}
+          {result.playerName.slice(0, 2).toUpperCase()}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15 }}>
+          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: cardTextColor }}>
             {result.playerName} {isMe && <span style={{ opacity: 0.6, fontWeight: 400 }}>(You)</span>}
           </div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, opacity: 0.6, marginTop: 1 }}>
-            {result.tokensUsed} tokens used
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.55, marginTop: 1, color: cardTextColor }}>
+            {result.tokensUsed} tok used
           </div>
         </div>
-        <AnimatedScore value={result.roundScore ?? result.totalScore ?? 0} />
+        <AnimatedScore value={result.roundScore ?? result.totalScore ?? 0} color={cardTextColor} />
       </div>
 
-      {/* Score breakdown strip */}
+      {/* Score breakdown */}
       {result.simScore !== undefined && (
         <ScoreStrip
           simScore={result.simScore}
           effScore={result.effScore}
           speedScore={result.speedScore}
           hadDoublePoints={result.hadDoublePoints}
+          onDark={isWinner && !isMe}
+          onAcid={isMe}
         />
       )}
 
       {/* Image comparison */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-        <ImageCard label="Target" src={referenceImage?.url} />
-        <ImageCard label="Your AI" src={result.imageData || undefined} placeholder={!result.imageData} />
+        <ImageCard label="Target" src={referenceImage?.url} onDark={isWinner} />
+        <ImageCard label="Your AI" src={result.imageData || undefined} placeholder={!result.imageData} onDark={isWinner} />
       </div>
 
       {/* Similarity score */}
@@ -175,36 +155,29 @@ function PlayerResultCard({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '8px 12px',
-        background: 'rgba(255,255,255,0.6)',
-        border: 'var(--border)',
-        borderRadius: 'var(--radius-md)',
+        background: isMe ? 'rgba(14,14,8,0.12)' : isWinner ? 'rgba(255,255,255,0.06)' : 'var(--paper-2)',
+        border: 'var(--bd)',
+        borderRadius: 'var(--r)',
         marginBottom: 10,
       }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12 }}>
-          Similarity
-        </span>
+        <span className="po-kicker" style={{ opacity: 1 }}>Similarity</span>
         <span style={{
           fontFamily: 'var(--font-display)',
           fontWeight: 900,
-          fontSize: 18,
-          color: result.similarityScore >= 70 ? 'var(--teal)' : result.similarityScore >= 40 ? 'var(--orange)' : 'var(--coral)',
+          fontSize: 20,
+          letterSpacing: '-0.02em',
+          color: result.similarityScore >= 70 ? 'var(--acid)' : result.similarityScore >= 40 ? 'var(--warn)' : 'var(--danger)',
         }}>
           {result.similarityScore}%
         </span>
       </div>
 
-
       {/* Prompt used */}
-      <div style={{
-        padding: '10px 12px',
-        background: 'rgba(255,255,255,0.5)',
-        border: '1.5px dashed var(--black)',
-        borderRadius: 'var(--radius-md)',
-      }}>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, opacity: 0.6, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {isMe ? 'Your prompt' : `${result.playerName}'s prompt`}
+      <div className="po-terminal" style={{ borderRadius: 'var(--r-sm)' }}>
+        <div className="po-kicker" style={{ color: 'var(--acid)', opacity: 1, marginBottom: 6 }}>
+          {isMe ? 'your prompt' : `${result.playerName}'s prompt`}
         </div>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, lineHeight: 1.55, color: 'var(--paper)' }}>
           &ldquo;{result.prompt}&rdquo;
         </div>
       </div>
@@ -214,12 +187,12 @@ function PlayerResultCard({
         <div style={{
           marginTop: 10,
           padding: '8px 12px',
-          background: 'rgba(255,255,255,0.5)',
-          borderRadius: 'var(--radius-md)',
+          background: isMe ? 'rgba(14,14,8,0.1)' : isWinner ? 'rgba(255,255,255,0.05)' : 'var(--paper-2)',
+          borderRadius: 'var(--r)',
           fontFamily: 'var(--font-body)',
           fontSize: 13,
-          fontWeight: 500,
-          lineHeight: 1.4,
+          lineHeight: 1.45,
+          color: cardTextColor,
         }}>
           💡 {result.reasoning}
         </div>
@@ -228,58 +201,52 @@ function PlayerResultCard({
   );
 }
 
-function ScoreStrip({ simScore, effScore, speedScore, hadDoublePoints }: {
-  simScore?: number; effScore?: number; speedScore?: number; hadDoublePoints?: boolean;
+function ScoreStrip({ simScore, effScore, speedScore, hadDoublePoints, onDark, onAcid }: {
+  simScore?: number; effScore?: number; speedScore?: number; hadDoublePoints?: boolean; onDark?: boolean; onAcid?: boolean;
 }) {
   const cells = [
-    { emoji: '🎯', label: 'Similarity', value: simScore, max: 60 },
-    { emoji: '✂️', label: 'Efficiency', value: effScore, max: 25 },
-    { emoji: '⚡', label: 'Speed',      value: speedScore, max: 15 },
+    { label: 'Match',      value: simScore,   max: 60 },
+    { label: 'Efficiency', value: effScore,   max: 25 },
+    { label: 'Speed',      value: speedScore, max: 15 },
   ];
+
+  const stripBg = onAcid
+    ? 'rgba(14,14,8,0.18)'
+    : onDark
+      ? 'rgba(255,255,255,0.08)'
+      : 'var(--paper-2)';
+
+  const labelColor = onAcid ? 'var(--ink)' : onDark ? 'var(--acid)' : 'var(--ink)';
+  const labelOpacity = onAcid ? 0.6 : onDark ? 0.9 : 0.55;
+  const valueColor = onAcid ? 'var(--ink)' : onDark ? 'var(--paper)' : 'var(--black)';
+  const denomColor = onAcid ? 'rgba(14,14,8,0.45)' : onDark ? 'rgba(240,239,232,0.45)' : 'rgba(14,14,8,0.4)';
+
   return (
     <div style={{
-      background: 'rgba(0,0,0,0.07)',
-      borderRadius: 'var(--radius-md)',
+      background: stripBg,
+      border: onAcid ? '1.5px solid rgba(14,14,8,0.25)' : 'var(--bd1)',
+      borderRadius: 'var(--r)',
       padding: '12px 8px',
       marginBottom: 14,
     }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
         {cells.map(cell => (
-          <div key={cell.label} style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
-          }}>
-            <span style={{ fontSize: 16 }}>{cell.emoji}</span>
-            <span style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 10,
-              fontWeight: 600,
-              opacity: 0.55,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
+          <div key={cell.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <span className="po-kicker" style={{ color: labelColor, opacity: labelOpacity }}>
               {cell.label}
             </span>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 22, lineHeight: 1 }}>
+            <div style={{
+              fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 20, lineHeight: 1,
+              color: valueColor,
+            }}>
               {cell.value ?? '—'}
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, opacity: 0.55 }}>
-                {' '}/ {cell.max}
-              </span>
+              <span style={{ fontSize: 13, color: denomColor }}> / {cell.max}</span>
             </div>
           </div>
         ))}
       </div>
       {hadDoublePoints && (
-        <div style={{
-          textAlign: 'center',
-          marginTop: 10,
-          fontFamily: 'var(--font-body)',
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#b8860b',
-        }}>
+        <div style={{ textAlign: 'center', marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: onAcid ? 'var(--ink)' : 'var(--acid)' }}>
           ⭐ 2× was applied
         </div>
       )}
@@ -287,24 +254,23 @@ function ScoreStrip({ simScore, effScore, speedScore, hadDoublePoints }: {
   );
 }
 
-function ImageCard({ label, src, placeholder }: { label: string; src?: string; placeholder?: boolean }) {
+function ImageCard({ label, src, placeholder, onDark }: { label: string; src?: string; placeholder?: boolean; onDark?: boolean }) {
   return (
     <div style={{
-      border: 'var(--border)',
-      borderRadius: 'var(--radius-md)',
+      border: 'var(--bd)',
+      borderRadius: 'var(--r)',
       overflow: 'hidden',
-      boxShadow: 'var(--shadow-sm)',
-      background: 'var(--track)',
+      boxShadow: 'var(--sh-xs)',
     }}>
       <div style={{
         padding: '4px 8px',
-        background: 'var(--black)',
-        color: 'var(--white)',
-        fontFamily: 'var(--font-body)',
+        background: 'var(--ink)',
+        color: 'var(--acid)',
+        fontFamily: 'var(--font-mono)',
         fontSize: 10,
-        fontWeight: 600,
+        fontWeight: 700,
         textTransform: 'uppercase',
-        letterSpacing: '0.05em',
+        letterSpacing: '0.12em',
       }}>
         {label}
       </div>
@@ -322,13 +288,14 @@ function ImageCard({ label, src, placeholder }: { label: string; src?: string; p
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: 'var(--font-body)',
-          fontSize: 12,
+          background: onDark ? 'rgba(255,255,255,0.04)' : 'var(--paper-2)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
           opacity: 0.4,
           flexDirection: 'column',
           gap: 4,
+          color: onDark ? 'var(--paper)' : 'var(--black)',
         }}>
-          <span style={{ fontSize: 24 }}>🖼️</span>
           <span>No image</span>
         </div>
       )}
@@ -336,7 +303,7 @@ function ImageCard({ label, src, placeholder }: { label: string; src?: string; p
   );
 }
 
-function AnimatedScore({ value }: { value: number }) {
+function AnimatedScore({ value, color }: { value: number; color: string }) {
   const [display, setDisplay] = useState(0);
   const frameRef = useRef<number>(0);
 
@@ -357,17 +324,9 @@ function AnimatedScore({ value }: { value: number }) {
   }, [value]);
 
   return (
-    <div style={{
-      fontFamily: 'var(--font-display)',
-      fontWeight: 900,
-      fontSize: 28,
-      lineHeight: 1,
-      textAlign: 'right',
-    }}>
+    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 28, lineHeight: 1, textAlign: 'right', color }}>
       {display}
-      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 11, opacity: 0.5, textAlign: 'center' }}>
-        pts
-      </div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 400, fontSize: 11, opacity: 0.5, textAlign: 'center' }}>pts</div>
     </div>
   );
 }

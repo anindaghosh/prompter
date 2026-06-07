@@ -1,9 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useStats } from '@/hooks/useStats';
 import StatCard from '@/components/StatCard';
 import InsightsPanel from '@/components/InsightsPanel';
+import BottomNav from '@/components/BottomNav';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -13,7 +13,6 @@ function formatDate(ts: { microsSinceUnixEpoch: bigint }): string {
 }
 
 export default function StatsPage() {
-  const router = useRouter();
   const { stats, history, loading } = useStats();
 
   const avgSimilarity = stats && stats.gamesPlayed > 0
@@ -26,53 +25,39 @@ export default function StatsPage() {
 
   return (
     <div className="page-wrapper">
-      <div className="page-content" style={{ paddingTop: 24, paddingBottom: 48 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-          <button
-            onClick={() => router.push('/')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, opacity: 0.6, padding: '4px 0' }}
-          >
-            ← Home
-          </button>
-        </div>
-
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 28, marginBottom: 8 }}>
-            My Stats
+      <div className="page-content" style={{ paddingTop: 24, paddingBottom: 96 }}>
+        <div style={{ marginBottom: 28 }}>
+          <div className="po-kicker" style={{ marginBottom: 6 }}>Performance</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 32, letterSpacing: '-0.03em', color: 'var(--black)' }}>
+            ◆ My Stats
           </h1>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6 }}>
-            Your performance across all games
-          </p>
         </div>
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '48px 16px', opacity: 0.5 }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 14 }}>Loading…</div>
+            <div className="po-mono" style={{ fontSize: 14, color: 'var(--black)' }}>Loading…</div>
           </div>
         ) : !stats || stats.gamesPlayed === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🎮</div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.6 }}>
+          <div className="po-panel" style={{ textAlign: 'center', padding: '48px 16px' }}>
+            <div className="po-kicker" style={{ color: 'var(--acid)', opacity: 1, marginBottom: 8 }}>No Data</div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, opacity: 0.7, color: 'var(--paper)' }}>
               Play your first game to see stats here
             </p>
           </div>
         ) : (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 32 }}>
-              <StatCard label="Games Played" value={stats.gamesPlayed} />
-              <StatCard label="Wins" value={`${stats.gamesWon} (${winRate}%)`} accent />
-              <StatCard label="Best Score" value={`${stats.bestScore} pts`} />
+              <StatCard label="Games" value={stats.gamesPlayed} />
+              <StatCard label="Win Rate" value={`${winRate}%`} accent />
+              <StatCard label="Best Score" value={`${stats.bestScore}`} />
               <StatCard label="Avg Similarity" value={`${avgSimilarity}%`} />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, marginBottom: 12 }}>
-                Recent Games
-              </h2>
+              <div className="po-kicker" style={{ marginBottom: 12 }}>Recent Games</div>
 
               {history.length === 0 ? (
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, opacity: 0.5 }}>No history yet.</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, opacity: 0.5, color: 'var(--black)' }}>No history yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {history.map((entry, i) => {
@@ -80,41 +65,33 @@ export default function StatsPage() {
                     return (
                       <div
                         key={entry.id.toString()}
-                        className={`player-row animate-slide-up`}
+                        className="po-row animate-slide-up"
                         style={{ animationDelay: `${i * 0.05}s`, opacity: 0, animationFillMode: 'forwards' }}
                       >
                         <div style={{
                           fontFamily: 'var(--font-display)',
                           fontWeight: 900,
-                          fontSize: isTop3 ? 20 : 14,
+                          fontSize: isTop3 ? 20 : 13,
                           width: 32,
                           textAlign: 'center',
                           flexShrink: 0,
+                          color: 'var(--black)',
                         }}>
                           {isTop3 ? RANK_MEDALS[entry.finalRank - 1] : `#${entry.finalRank}`}
                         </div>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13 }}>
+                          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: 'var(--black)' }}>
                             {formatDate(entry.playedAt)}
                           </div>
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, opacity: 0.45, marginTop: 1 }}>
-                            {entry.playerCount} player{entry.playerCount !== 1 ? 's' : ''} · {entry.roundsPlayed} round{entry.roundsPlayed !== 1 ? 's' : ''} · {entry.avgSimilarity}% similarity
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.45, marginTop: 1, color: 'var(--black)' }}>
+                            {entry.playerCount} players · {entry.roundsPlayed} rounds · {entry.avgSimilarity}% match
                           </div>
                         </div>
 
-                        <div style={{
-                          fontFamily: 'var(--font-display)',
-                          fontWeight: 900,
-                          fontSize: 18,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 3,
-                        }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--black)' }}>
                           {entry.totalScore}
-                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 11, opacity: 0.6 }}>
-                            pts
-                          </span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 400, fontSize: 11, opacity: 0.6 }}> pts</span>
                         </div>
                       </div>
                     );
@@ -127,6 +104,7 @@ export default function StatsPage() {
           </>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }
