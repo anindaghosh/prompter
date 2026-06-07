@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 const TOKEN_BUDGET = 120;
 
@@ -30,7 +30,15 @@ export default function PromptEditor({
 }: PromptEditorProps) {
   const [prompt, setPrompt] = useState('');
   const [isShaking, setIsShaking] = useState(false);
+  const [cursorPos, setCursorPos] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const syncCursor = useCallback(() => {
+    if (textareaRef.current) {
+      setCursorPos(textareaRef.current.selectionStart ?? 0);
+    }
+  }, []);
 
   const tokensUsed = countTokens(prompt);
   const tokensRemaining = budget - tokensUsed;
@@ -57,6 +65,7 @@ export default function PromptEditor({
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       handleSubmit();
     }
+    syncCursor();
   };
 
   return (
@@ -95,31 +104,72 @@ export default function PromptEditor({
       >
         <div style={{ display: 'flex', gap: 8 }}>
           <span className="tok" style={{ flexShrink: 0, userSelect: 'none' }}>&gt;_</span>
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="describe the image you see... be precise but budget your tokens wisely."
-            disabled={disabled || generating}
-            rows={5}
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              resize: 'none',
-              color: 'var(--paper)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 14,
-              lineHeight: 1.55,
-              padding: 0,
-              cursor: disabled || generating ? 'not-allowed' : 'text',
-            }}
-          />
-          {!disabled && !generating && prompt.length === 0 && (
-            <span className="po-cursor on-dark" />
-          )}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={e => { setPrompt(e.target.value); syncCursor(); }}
+              onKeyDown={handleKeyDown}
+              onKeyUp={syncCursor}
+              onClick={syncCursor}
+              onSelect={syncCursor}
+              onFocus={() => { setIsFocused(true); syncCursor(); }}
+              onBlur={() => setIsFocused(false)}
+              disabled={disabled || generating}
+              rows={5}
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                color: 'transparent',
+                caretColor: 'transparent',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 14,
+                lineHeight: 1.55,
+                padding: 0,
+                cursor: disabled || generating ? 'not-allowed' : 'text',
+              }}
+            />
+            {/* Mirror overlay — renders text + custom block cursor */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: 'none',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 14,
+                lineHeight: 1.55,
+                color: 'var(--paper)',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                padding: 0,
+                zIndex: 0,
+              }}
+            >
+              {prompt.length === 0 && !isFocused ? (
+                <span style={{ opacity: 0.38 }}>
+                  describe the image you see... be precise but budget your tokens wisely.
+                </span>
+              ) : (
+                <>
+                  {prompt.slice(0, cursorPos)}
+                  {isFocused && !(disabled || generating) && (
+                    <span className="po-cursor on-dark" />
+                  )}
+                  {prompt.slice(cursorPos)}
+                </>
+              )}
+            </div>
+          </div>
         </div>
         {prompt.length > 0 && (
           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
